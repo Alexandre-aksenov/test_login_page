@@ -5,7 +5,8 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 const HEADER_SVG: Asset = asset!("/assets/header.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
-#[derive(Routable, Clone, PartialEq)]
+// https://dioxuslabs.com/learn/0.7/essentials/router/#creating-a-routable-enum
+#[derive(Routable, Clone, PartialEq)] // manual suggests to add: Debug
 enum Route {
     #[route("/")]
     Home {},
@@ -44,8 +45,8 @@ fn Login() -> Element {
 }
 
 #[component]
-pub fn Home() -> Element { // expected enum `Result<dioxus::prelude::VNode, dioxus::prelude::RenderError>`
-    Hero {} // Compilation error: found enum `Hero_completions::Component`
+pub fn Home() -> Element {
+    crate::Hero() // crate:: autofilled by RR.
 }
 
 #[component]
@@ -57,7 +58,7 @@ pub fn Hero() -> Element {
             div { id: "links",
                 a { href: "/trial", "📚 Trial without account" }
                 a { href: "/login", "🚀 Login" }
-                a { href: "https://github.com/dioxus-community/", "📡 Community Libraries" }
+                a { href: "https://github.com/dioxus-community/", "📡 Community Libraries" } // these links should be removed
                 a { href: "https://github.com/DioxusLabs/sdk", "⚙️ Dioxus Development Kit" }
                 a { href: "https://marketplace.visualstudio.com/items?itemName=DioxusLabs.dioxus", "💫 VSCode Extension" }
                 a { href: "https://discord.gg/XgGxMSkvUM", "👋 Community Discord" }

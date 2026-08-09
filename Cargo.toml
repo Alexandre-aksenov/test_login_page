@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 dioxus = { version = "0.7.1", features = ["router"] }
+# https://dioxuslabs.com/learn/0.7/essentials/router/#installing-the-router
 
 [features]
 default = ["web"]
