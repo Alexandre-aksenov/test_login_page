@@ -1,12 +1,20 @@
 use dioxus::prelude::*;
 
+// use dioxus_shareables::{shareable, List, ListEntry};
+// TOFIX :
+
+//     |
+
 // const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 const HEADER_SVG: Asset = asset!("/assets/header.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
+// shareable!(Numbers: List<usize> = [3, 5, 7].into_iter().collect());
+
+
 // https://dioxuslabs.com/learn/0.7/essentials/router/#creating-a-routable-enum
-#[derive(Routable, Clone, PartialEq)] // manual suggests to add Debug
+#[derive(Routable, Clone, PartialEq)] // manual suggests adding the Debug trait
 enum Route {
     #[route("/")]
     Home {},
@@ -48,10 +56,16 @@ fn Signup() -> Element {
     }
 }
 
+// fn Login() -> Element {
 #[component]
 fn Login() -> Element {
+//fn Login(cx: Scope) -> Element {
     rsx! {
-        div { "login" } // ADAPT the CLI test
+        div { "login" } // ADAPT the CLI login
+
+        // let nums = Numbers.use_rw(&cx);
+
+        // adda text field, writing to Numbers
     }
 }
 

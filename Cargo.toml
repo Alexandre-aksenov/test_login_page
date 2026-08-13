@@ -10,11 +10,16 @@ edition = "2021"
 dioxus = { version = "0.7.1", features = ["router"] }
 # https://dioxuslabs.com/learn/0.7/essentials/router/#installing-the-router
 
-# For managing accounts
-postgres = { version = "0.19.13"}
+# For managing accounts. postgres seems incompatible with wasm32/64-unknown-unknown on dioxus 0.7.1 !
+# postgres = { version = "0.19.13"}
+# [cargo] error: The wasm32/64-unknown-unknown are not supported by default; you may need to enable the "wasm_js" crate feature. For more infor
+#    --> /home/alex/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/getrandom-0.4.3/src/backends.rs:176:17
+
 sha3-rust = "0.1.1"
 hex = "0.4.3"
 
+# For storing connection data in an accessile way to all pages
+# dioxus-shareables = "0.3.0"
 
 [features]
 default = ["web"]
