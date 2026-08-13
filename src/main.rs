@@ -37,21 +37,21 @@ fn App() -> Element {
 #[component]
 fn Trial() -> Element {
     rsx! {
-        div { "trial without account" }
+        div { "The original (frontend) game will go here." }
     }
 }
 
 #[component]
 fn Signup() -> Element {
     rsx! {
-        div { "Sign up" }
+        div { "Sign up" } // ADAPT the CLI test
     }
 }
 
 #[component]
 fn Login() -> Element {
     rsx! {
-        div { "login" }
+        div { "login" } // ADAPT the CLI test
     }
 }
 
@@ -64,7 +64,7 @@ fn Game() -> Element {
 
 #[component]
 pub fn Home() -> Element {
-    crate::Hero() // crate:: autofilled by RR.
+    crate::Hero()
 }
 
 #[component]

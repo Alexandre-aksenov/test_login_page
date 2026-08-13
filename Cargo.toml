@@ -10,6 +10,12 @@ edition = "2021"
 dioxus = { version = "0.7.1", features = ["router"] }
 # https://dioxuslabs.com/learn/0.7/essentials/router/#installing-the-router
 
+# For managing accounts
+postgres = { version = "0.19.13"}
+sha3-rust = "0.1.1"
+hex = "0.4.3"
+
+
 [features]
 default = ["web"]
 web = ["dioxus/web"]
