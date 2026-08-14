@@ -1,9 +1,26 @@
 use dioxus::prelude::*;
 
 // use dioxus_shareables::{shareable, List, ListEntry};
-// TOFIX :
+// TOADD: backend, which communicates with PostgreSQL
 
-//     |
+#[cfg(feature = "server")]
+use axum::extract::Query;
+
+/*
+#[cfg(feature = "server")]
+#[tokio::main]
+async fn main() {
+    
+}
+
+A fn like this is present in the code of the lesson,
+but it seems not to be needed for this project.
+
+It contains:
+    creation of a table (I did that separately in psql),
+    connection to Google (not done for now),
+    axum::serve(listener, router).await.unwrap() : this may in fact be necessary.
+*/
 
 // const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -63,9 +80,6 @@ fn Login() -> Element {
     rsx! {
         div { "login" } // ADAPT the CLI login
 
-        // let nums = Numbers.use_rw(&cx);
-
-        // adda text field, writing to Numbers
     }
 }
 
@@ -98,3 +112,31 @@ pub fn Hero() -> Element {
         }
     }
 }
+
+// Server-side code. TOADAPT from the previous examples.
+//
+/*
+#[server()]
+async fn register(
+    login: &str,
+    hash_pwd: &str
+) -> Result<String, ServerFnError>
+*/
+
+/*
+#[server()]
+async fn login(  // <- ../login_proc_db_v2/src/main.rs
+    login: &str,
+    hash_pwd: &str
+) -> Result<i32, ServerFnError>  // new connection_id
+
+*/
+
+/*
+// will not be used in the preliminary version v2.0 .
+#[server()]
+async fn logout(  // <- ../login_proc_db_v2/src/main.rs
+    connection_id: i32
+) -> Result<String, ServerFnError>
+
+*/
