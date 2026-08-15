@@ -42,5 +42,15 @@ body {
     max-width: 1200px;
 }
 
+btn-primary {
+    color: white;
+    text-decoration: none;
+    margin-top: 20px;
+    margin: 10px 0px;
+    border: white 1px solid;
+    border-radius: 5px;
+    padding: 10px;
+}
+/* Meant to be used for buttons, inactive for now */
 
 

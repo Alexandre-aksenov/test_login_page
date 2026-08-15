@@ -125,9 +125,56 @@ fn Login() -> Element {
             },
         }
 
-        // Button "Sign up"/"Sign in" described by the future var 'button_text'. TODO
+        // Button "Sign up"/"Sign in" described by the future var 'button_text'. TOADAPT
         // Call the server fn, TODO
         // -> response_msg
+        div {
+                button {
+                    class : "btn-primary",
+                    onclick : move |_| async move {
+                        if signed_in() == false {
+                            // Sign in user
+                            // Calls the server fn 'login'
+                            // let response_text = register(first_name(), last_name(), email(), password()).await.unwrap();
+                            // ->
+                            // hash pwd TOCHECK.  RR's suggestion:
+                            // let hashed_pwd = hash_pwd(password());
+                            // -> (RR does not provide anything, even type inference, until compilation ?!)
+                            let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
+
+                            // let response = login(user_login(), hashed_pwd).await.unwrap();
+                            // Added a readable reaction in case of failure, such as click without credentials.
+                            // ->
+                            let res_response = login(user_login(), hashed_pwd).await;
+                            /*
+                            let response = match res_response {
+                                Ok(response) => response,
+                                Err(_) => -3,
+                            };
+                            */
+                            let response = res_response.unwrap_or(-4);
+
+                            // response_msg.set(response_text);
+                            // ->
+                            let response_text = match (response > 0) {
+                                true => format!("Login successful, connection id {}", response), // "Login successful".to_string(),
+                                false => format!("Login failed, code {}", response), // "Login failed".to_string(),
+                            };
+                            response_msg.set(response_text);
+
+                        } else {
+                            // Sign out user
+                            // Will call the server fn 'logout' .
+                            // TODO in future (this instruction is here just to avoid compilation errors)
+                            let response = login(user_login(), cleartext_pwd()).await.unwrap();
+
+                            response_msg.set(format!("{}", response));
+                        }
+                    },
+                    {button_text()}
+                }
+            }
+
 
     } // end of rsx!
 } // end of component
@@ -140,30 +187,7 @@ fn Game() -> Element {
     }
 }
 
-/*
-#[component]
-pub fn Home() -> Element {
-    crate::Hero()
-}
 
-#[component]
-pub fn Hero() -> Element {
-    rsx! {
-        div {
-            id: "hero",
-            img { src: HEADER_SVG, id: "header" } // Dioxus: interfaces that run anywhere
-            div { id: "links",
-                a { href: "/trial", "📚 Trial without account" }
-                a { href: "/login", "🚀 Login" }
-                a { href: "/signup", "📡 Sign up" }
-            }
-        }
-    }
-}
-
-{over-engineered!}
- */
-// ->
 #[component]
 pub fn Home() -> Element {
     rsx! {
@@ -193,7 +217,9 @@ async fn register(
 
 /// <- ../login_proc_db_v2/src/main.rs
 /// new connection_id = -1 should be returned if error on connection to DB.
-/// new connection_id = -2 should be returned if login is rejected by DB.
+/// new connection_id = -2 should be returned if the row does not contain "new_connection_id"
+///    (which it should according to the signature of the DB procedure).
+/// new connection_id = -3 should be returned if login is rejected by DB.
 #[server()]
 async fn login(
     user_login: String, // &str -> error[E0521]: borrowed data escapes outside of function
@@ -215,11 +241,12 @@ async fn login(
 
             match res_login {
                 Ok(row) => {
-                    new_connection_id = row.get("new_connection_id");
+                    // new_connection_id = row.get("new_connection_id"); // ->
+                    new_connection_id = row.try_get("new_connection_id").unwrap_or(-2);
                 }
                 Err(e) => {
                     eprintln!("Login failed : {}", e);
-                    new_connection_id = -2;
+                    new_connection_id = -3;
                 }
             }
 
