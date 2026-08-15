@@ -1,5 +1,8 @@
 use dioxus::prelude::*;
 
+use sha3_rust::sha3_256; // for hashing the pwd in the DX client
+use hex;
+
 // use dioxus_shareables::{shareable, List, ListEntry};
 // TOADD: backend, which communicates with PostgreSQL
 
@@ -90,6 +93,7 @@ fn Game() -> Element {
     }
 }
 
+/*
 #[component]
 pub fn Home() -> Element {
     crate::Hero()
@@ -109,6 +113,26 @@ pub fn Hero() -> Element {
         }
     }
 }
+
+{over-engineered!}
+ */
+// ->
+#[component]
+pub fn Home() -> Element {
+    rsx! {
+        div {
+            id: "hero",
+            img { src: HEADER_SVG, id: "header" } // Dioxus: interfaces that run anywhere
+            div { id: "links",
+                a { href: "/trial", "📚 Trial without account" }
+                a { href: "/login", "🚀 Login" }
+                a { href: "/signup", "📡 Sign up" }
+            }
+        }
+    }
+}
+
+
 
 // Server-side code. TOADAPT from the previous examples.
 //
