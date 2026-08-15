@@ -79,12 +79,59 @@ fn Signup() -> Element {
 // fn Login() -> Element {
 #[component]
 fn Login() -> Element {
-//fn Login(cx: Scope) -> Element {
-    rsx! {
-        div { "login" } // Call the server fn
+    let mut signed_in = use_signal(|| false);
+    let mut user_login = use_signal(|| String::new());
+    let mut cleartext_pwd = use_signal(|| String::new());
+    let mut button_text = use_signal(|| String::new());
 
+    // let mut response_msg = use_signal(|| String::new());
+    // ->
+    let mut response_msg: Signal<String> = use_signal(|| String::from("Please, sign in"));
+
+
+    if signed_in() == false {
+        button_text.set(String::from("Sign in")); // button appears on the 1st load
+    } else {
+        button_text.set(String::from("Sign out"));
     }
-}
+
+    rsx! {
+            div {
+                class : "msg",
+                "{response_msg}"
+            }
+
+        if signed_in() == false {
+            div {
+                class: "row col2", // these fields can look better after changes in CSS.
+                div {
+                    input {
+                        type : "text",
+                        placeholder: "Login",
+                        oninput: move |event| {
+                            user_login.set(event.value());
+                        },
+                    }
+                }
+                div {
+                    input {
+                        type : "password",
+                        placeholder: "Password",
+                        oninput: move |event| {
+                            cleartext_pwd.set(event.value());
+                        },
+                    }
+                }
+            },
+        }
+
+        // Button "Sign up"/"Sign in" described by the future var 'button_text'. TODO
+        // Call the server fn, TODO
+        // -> response_msg
+
+    } // end of rsx!
+} // end of component
+
 
 #[component]
 fn Game() -> Element {
