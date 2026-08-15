@@ -69,7 +69,7 @@ fn Trial() -> Element {
 #[component]
 fn Signup() -> Element {
     rsx! {
-        div { "Sign up" } // ADAPT the CLI test
+        div { "Sign up" } // ADAPT the CLI 'signup'
     }
 }
 
@@ -78,7 +78,7 @@ fn Signup() -> Element {
 fn Login() -> Element {
 //fn Login(cx: Scope) -> Element {
     rsx! {
-        div { "login" } // ADAPT the CLI login
+        div { "login" } // Call the server fn
 
     }
 }
@@ -105,9 +105,6 @@ pub fn Hero() -> Element {
                 a { href: "/trial", "📚 Trial without account" }
                 a { href: "/login", "🚀 Login" }
                 a { href: "/signup", "📡 Sign up" }
-                // a { href: "https://github.com/DioxusLabs/sdk", "⚙️ Dioxus Development Kit" }
-                // a { href: "https://marketplace.visualstudio.com/items?itemName=DioxusLabs.dioxus", "💫 VSCode Extension" }
-                // a { href: "https://discord.gg/XgGxMSkvUM", "👋 Community Discord" }
             }
         }
     }
@@ -128,7 +125,7 @@ async fn register(
 /// new connection_id = -2 should be returned if login is rejected by DB.
 #[server()]
 async fn login(
-    user_login: String, // &str, // error[E0521]: borrowed data escapes outside of function
+    user_login: String, // &str -> error[E0521]: borrowed data escapes outside of function
     hash_pwd: String
 ) -> Result<i32, ServerFnError>
 {
@@ -140,18 +137,17 @@ async fn login(
     let connection_id = match res_client {
         Ok(mut client) => {
 
-            let query_login = format!("call sign_in(login => '{}', pwd => '{}');").format(user_login, hash_pwd);
-            let res_login = client.query_one(query_login, &[]);
+            let query_login = format!("call sign_in(login => '{}', pwd => '{}');", &user_login, &hash_pwd);
+            let res_login = client.query_one(&query_login, &[]);
 
             let mut new_connection_id: i32 = 0;
 
-            match res_login { // Adapted from RR suggestion
+            match res_login {
                 Ok(row) => {
                     new_connection_id = row.get("new_connection_id");
                 }
                 Err(e) => {
                     eprintln!("Login failed : {}", e);
-                    // return Err(e.into());
                     new_connection_id = -2;
                 }
             }
@@ -168,7 +164,7 @@ async fn login(
 
 
 /*
-// will not be used in the preliminary version v2.0 .
+// will not be used in the preliminary version v2.0 (?!)
 #[server()]
 async fn logout(  // <- ../login_proc_db_v2/src/main.rs
     connection_id: i32
