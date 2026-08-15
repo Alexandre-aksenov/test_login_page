@@ -123,14 +123,49 @@ async fn register(
 ) -> Result<String, ServerFnError>
 */
 
-/*
+/// <- ../login_proc_db_v2/src/main.rs
+/// new connection_id = -1 should be returned if error on connection to DB.
+/// new connection_id = -2 should be returned if login is rejected by DB.
 #[server()]
-async fn login(  // <- ../login_proc_db_v2/src/main.rs
-    login: &str,
-    hash_pwd: &str
-) -> Result<i32, ServerFnError>  // new connection_id
+async fn login(
+    user_login: String, // &str, // error[E0521]: borrowed data escapes outside of function
+    hash_pwd: String
+) -> Result<i32, ServerFnError>
+{
+    use postgres::{Client, NoTls};
 
-*/
+
+    let res_client = Client::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls);
+
+    let connection_id = match res_client {
+        Ok(mut client) => {
+
+            let query_login = format!("call sign_in(login => '{}', pwd => '{}');").format(user_login, hash_pwd);
+            let res_login = client.query_one(query_login, &[]);
+
+            let mut new_connection_id: i32 = 0;
+
+            match res_login { // Adapted from RR suggestion
+                Ok(row) => {
+                    new_connection_id = row.get("new_connection_id");
+                }
+                Err(e) => {
+                    eprintln!("Login failed : {}", e);
+                    // return Err(e.into());
+                    new_connection_id = -2;
+                }
+            }
+
+            new_connection_id
+        }
+        Err(e) => {
+            eprintln!("Failed to connect to database: {}", e);
+            -1
+        }};
+
+    Ok(connection_id)
+}
+
 
 /*
 // will not be used in the preliminary version v2.0 .
