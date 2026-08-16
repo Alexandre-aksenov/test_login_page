@@ -17,7 +17,8 @@ axum = { version = "0.8.9", optional = true }
 # Try to prevent server status 500:
 tokio = { version = "1.53.1", features = ["full"], optional = true }
 
-postgres = { version = "0.19.13", optional = true }
+# postgres = { version = "0.19.13", optional = true }
+tokio-postgres = { version = "0.7.13", optional = true }
 
 # For hashing the password:
 sha3-rust = "0.1.1"
@@ -32,4 +33,6 @@ web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
 # new for fullstack:
-server = ["dioxus/server", "dep:axum", "dep:tokio-tungstenite", "dep:postgres", "dep:tokio"]
+# server = ["dioxus/server", "dep:axum", "dep:tokio-tungstenite", "dep:postgres", "dep:tokio"]
+#->
+server = ["dioxus/server", "dep:axum", "dep:tokio-tungstenite", "dep:tokio-postgres", "dep:tokio"]

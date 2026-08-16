@@ -9,21 +9,24 @@ use hex;
 #[cfg(feature = "server")]
 use axum::extract::Query;
 
-
+/*
 /// Copied from the lesson.
 #[cfg(feature = "server")]
 #[tokio::main]
 async fn main() {
-    let address = dioxus::cli_config::fullstack_address_or_localhost();
-    let listener = tokio::net::TcpListener::bind(address).await.unwrap();
+    // let address = dioxus::cli_config::fullstack_address_or_localhost();
+    // let listener = tokio::net::TcpListener::bind(address).await.unwrap();
 
     // axum::serve(listener).await.unwrap();
     // -> error[E0061]: this function takes 2 arguments but 1 argument was supplied
     // If this line is commented out: [dev] Application [server] exited gracefully.
 
     // Fix by RR:
-    axum::serve(listener, axum::Router::new()).await.unwrap();
+    // axum::serve(listener, axum::Router::new()).await.unwrap();
+
+    dioxus::launch(App);
 }
+*/
 
 /*
 A fn like this is present in the code of the lesson,
@@ -60,7 +63,7 @@ enum Route {
 
 /// Main fn for the frontend.
 /// -> status 404 in browser
-#[cfg(not(feature = "server"))]
+// #[cfg(not(feature = "server"))]
 fn main() {
     dioxus::launch(App);
 }
@@ -239,16 +242,30 @@ async fn login(
     hash_pwd: String
 ) -> Result<i32, ServerFnError>
 {
-    use postgres::{Client, NoTls};
+    // use postgres::{Client, NoTls};
+    // ->
+    use tokio_postgres::NoTls;
 
-
-    let res_client = Client::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls);
+    // let res_client = Client::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls);
+    // ->
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
 
     let connection_id = match res_client {
-        Ok(mut client) => {
+        // Ok(mut client) => {
+        Ok((mut client, connection)) => {
+
+            // Suggested by Junie (1st answer of 15-16/8/2026
+            tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
+
 
             let query_login = format!("call sign_in(login => '{}', pwd => '{}');", &user_login, &hash_pwd);
-            let res_login = client.query_one(&query_login, &[]);
+            // let res_login = client.query_one(&query_login, &[]);
+            // ->
+            let res_login = client.query_one(&query_login, &[]).await;
 
             let mut new_connection_id: i32 = 0;
 
