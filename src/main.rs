@@ -119,7 +119,7 @@ fn Login() -> Element {
 
         if signed_in() == false {
             div {
-                class: "row col2", // these fields can look better after changes in CSS.
+                class: "row col2",
                 div {
                     input {
                         type : "text",
@@ -142,54 +142,40 @@ fn Login() -> Element {
         }
 
         // Button "Sign up"/"Sign in" described by the future var 'button_text'. TOADAPT
-        // Call the server fn, TODO
+        // this button can look more like a button after changes in CSS.
+        // Call the server fn,
         // -> response_msg
         div {
-                button {
-                    class : "btn-primary",
-                    onclick : move |_| async move {
-                        if signed_in() == false {
-                            // Sign in user
-                            // Calls the server fn 'login'
-                            // let response_text = register(first_name(), last_name(), email(), password()).await.unwrap();
-                            // ->
-                            // hash pwd TOCHECK.  RR's suggestion:
-                            // let hashed_pwd = hash_pwd(password());
-                            // -> (RR does not provide anything, even type inference, until compilation ?!)
-                            let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
+            button {
+                class : "btn-primary",
+                onclick : move |_| async move {
+                    if signed_in() == false {
+                        // Sign-in user
+                        // Calls the server fn 'login'
 
-                            // let response = login(user_login(), hashed_pwd).await.unwrap();
-                            // Added a readable reaction in case of failure, such as click without credentials.
-                            // ->
-                            let res_response = login(user_login(), hashed_pwd).await;
-                            /*
-                            let response = match res_response {
-                                Ok(response) => response,
-                                Err(_) => -3,
-                            };
-                            */
-                            let response = res_response.unwrap_or(-4);
+                        let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
-                            // response_msg.set(response_text);
-                            // ->
-                            let response_text = match (response > 0) {
-                                true => format!("Login successful, connection id {}", response), // "Login successful".to_string(),
-                                false => format!("Login failed, code {}", response), // "Login failed".to_string(),
-                            };
-                            response_msg.set(response_text);
+                        let res_response = login(user_login(), hashed_pwd).await;
+                        let response = res_response.unwrap_or(-4); // DX server did not reply
 
-                        } else {
-                            // Sign out user
-                            // Will call the server fn 'logout' .
-                            // TODO in future (this instruction is here just to avoid compilation errors)
-                            let response = login(user_login(), cleartext_pwd()).await.unwrap();
+                        let response_text = match (response > 0) {
+                            true => format!("Login successful, connection id {}", response),
+                            false => format!("Login failed, code {}", response),
+                        };
+                        response_msg.set(response_text);
 
-                            response_msg.set(format!("{}", response));
-                        }
-                    },
-                    {button_text()}
-                }
-            }
+                    } else {
+                        // Sign out user
+                        // Will call the server fn 'logout' .
+                        // TODO in future (this instruction is here just to avoid compilation errors)
+                        let response = login(user_login(), cleartext_pwd()).await.unwrap();
+
+                        response_msg.set(format!("{}", response));
+                    }
+                }, // end of 'onclick'
+                {button_text()}
+            } // end of 'button'
+        } // end of div
 
 
     } // end of rsx!
