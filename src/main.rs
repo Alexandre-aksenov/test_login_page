@@ -132,7 +132,7 @@ fn Login() -> Element {
                 }
                 div {
                     input {
-                        type : "password",
+                        type : "text",
                         placeholder: "Password",
                         oninput: move |event| {
                             cleartext_pwd.set(event.value());
@@ -293,7 +293,7 @@ async fn logout(
 
     let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
 
-    let reply = match res_client { // Result<String,String> to send to the client
+    let reply = match res_client { // Result<String, ServerFnError> to send to the client
         Ok((mut client, connection)) => {
             // Logout call itself
 
