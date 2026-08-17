@@ -132,7 +132,7 @@ fn Login() -> Element {
                 }
                 div {
                     input {
-                        type : "text",
+                        type : "text", // will be "password" in the deployed version
                         placeholder: "Password",
                         oninput: move |event| {
                             cleartext_pwd.set(event.value());
@@ -172,11 +172,18 @@ fn Login() -> Element {
 
                     } else {
                         // Sign out user
-                        // Will call the server fn 'logout' .
-                        // TODO in future (this instruction is here just to avoid compilation errors)
-                        let res_logout = logout(pagewize_conn_id()).await.unwrap(); // TOFIX unwrap
+                        // Calls the server fn 'logout'.
+                        let res_logout = logout(pagewize_conn_id()).await.unwrap();
+                        // 'unwrap' considers that 'pagewize_conn_id' is accurate.
+                        // This is true when 'logout' is called after 'login' succeeds,
+                        // but panics if, for example, 'logout' is clicked twice
+                        // (which should not happen in this App).
 
+                        // modify pagewize vars.
                         response_msg.set(format!("{}", res_logout));
+                        signed_in.set(false);
+                        user_login.set(String::new());
+                        cleartext_pwd.set(String::new());
                     }
                 }, // end of 'onclick'
                 {button_text()}
