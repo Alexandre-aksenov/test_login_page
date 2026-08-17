@@ -99,6 +99,7 @@ fn Login() -> Element {
     let mut user_login = use_signal(|| String::new());
     let mut cleartext_pwd = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
+    let mut pagewize_conn_id: Signal<i32> = use_signal(|| 0);
 
     // let mut response_msg = use_signal(|| String::new());
     // ->
@@ -159,18 +160,23 @@ fn Login() -> Element {
                         let response = res_response.unwrap_or(-4); // DX server did not reply
 
                         let response_text = match (response > 0) {
-                            true => format!("Login successful, connection id {}", response),
+                            true => {// In case of success, update pagewize data:
+                                pagewize_conn_id.set(response);
+                                signed_in.set(true); // The button changed to "Sign out"
+                                format!("Login successful, connection id {}", response)
+                            },
                             false => format!("Login failed, code {}", response),
                         };
+
                         response_msg.set(response_text);
 
                     } else {
                         // Sign out user
                         // Will call the server fn 'logout' .
                         // TODO in future (this instruction is here just to avoid compilation errors)
-                        let response = login(user_login(), cleartext_pwd()).await.unwrap();
+                        let res_logout = logout(pagewize_conn_id()).await.unwrap(); // TOFIX unwrap
 
-                        response_msg.set(format!("{}", response));
+                        response_msg.set(format!("{}", res_logout));
                     }
                 }, // end of 'onclick'
                 {button_text()}
@@ -226,7 +232,7 @@ async fn register(
 async fn login(
     user_login: String, // &str -> error[E0521]: borrowed data escapes outside of function
     hash_pwd: String
-) -> Result<i32, ServerFnError>
+) -> Result<i32, ServerFnError> // <- dioxus::prelude::ServerFnError
 {
     // use postgres::{Client, NoTls};
     // ->
@@ -277,11 +283,53 @@ async fn login(
 }
 
 
-/*
-// will not be used in the preliminary version v2.0 (?!)
+/// <- ../login_proc_db_v2/src/main.rs
 #[server()]
-async fn logout(  // <- ../login_proc_db_v2/src/main.rs
+async fn logout(
     connection_id: i32
 ) -> Result<String, ServerFnError>
+{
+    use tokio_postgres::NoTls;
 
-*/
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+
+    let reply = match res_client { // Result<String,String> to send to the client
+        Ok((mut client, connection)) => {
+            // Logout call itself
+
+            // Suggested by Junie (1st answer of 15-16/8/2026
+            tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    eprintln!("connection error during logout: {}", e);
+                }
+            });
+
+            let query_logout = format!("call logout(session_id => {});", connection_id);
+            let res_logout = client.execute(&query_logout, &[]).await;
+
+            match res_logout {
+                // Ok(_) => String::from("Logged out successfully."),
+                Ok(_) => Ok(String::from("Logged out successfully.")),
+                // Err(e) => Err(format!("Failed to sign_out: {}", e)),
+                Err(e) => Err(ServerFnError::Request(dioxus_fullstack::RequestError::Body(format!("Failed to sign_out: {}", e)))),
+            }
+
+        },
+        Err(e) => {
+            eprintln!("Failed to connect to database: {}", e);
+            // String::from("Failed to connect to database while attempting to sign_out.")
+            // Err(format!("Failed to connect to database while attempting to sign_out: {}", e))
+
+            Err(ServerFnError::Request(dioxus_fullstack::RequestError::Request(format!("Failed to connect to database while attempting to sign_out: {}", e))))
+        }
+    }; // end: let reply =
+
+    // reply // -> expected `Result<String, ServerFnError>`, found `Result<String, String>`
+
+    match reply {
+        Ok(reply) => Ok(reply),
+        Err(e) => Err(e),
+    }
+
+}
+
