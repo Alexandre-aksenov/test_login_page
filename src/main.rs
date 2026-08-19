@@ -73,18 +73,27 @@ fn Login() -> Element {
 
     let mut user_login = use_signal(|| String::new()); // -> use_persistent
     let mut cleartext_pwd = use_signal(|| String::new());
+
+    let mut response_msg: Signal<String> = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
 
     let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
 
-    let mut response_msg: Signal<String> = use_signal(|| String::from("Please, sign in"));
+    /*
+    response_msg = match *signed_in.read() {
+        true => format!("You are signed in with connection ID {}", *pagewize_conn_id.read()),
+        false => String::from("Please, sign in"),
+    };
+     */
 
-
-    // if signed_in() == false { // -> *signed_in.read()
     if *signed_in.read() == false {
-        button_text.set(String::from("Sign in")); // button appears on the 1st load
+        {button_text.set(String::from("Sign in"));
+            response_msg.set(String::from("Please, sign in"));
+        }
     } else {
-        button_text.set(String::from("Sign out"));
+        { button_text.set(String::from("Sign out"));
+            response_msg.set(String::from("You are signed in")); // TOADD info: as user_login
+        }
     }
 
     rsx! {
