@@ -96,14 +96,14 @@ fn Signup() -> Element {
 // fn Login() -> Element {
 #[component]
 fn Login() -> Element {
-    // let mut signed_in = use_signal(|| false); // -> use_persistent
-    // ->
     let mut signed_in = use_persistent("signed_in", || false);
 
     let mut user_login = use_signal(|| String::new()); // -> use_persistent
     let mut cleartext_pwd = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
-    let mut pagewize_conn_id: Signal<i32> = use_signal(|| 0); // -> use_persistent
+    // let mut pagewize_conn_id: Signal<i32> = use_signal(|| 0); // -> use_persistent
+    // -> (TOADAPT usage)
+    let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
 
     let mut response_msg: Signal<String> = use_signal(|| String::from("Please, sign in"));
 
@@ -153,7 +153,6 @@ fn Login() -> Element {
             button {
                 class : "btn-primary",
                 onclick : move |_| async move {
-                    // if signed_in() == false { // -> *signed_in.read()
                     if *signed_in.read() == false {
                         // Sign-in user
                         // Calls the server fn 'login'
@@ -163,13 +162,12 @@ fn Login() -> Element {
                         let res_response = login(user_login(), hashed_pwd).await;
                         // -> *user_login.read()
 
-                        let response = res_response.unwrap_or(-4); // means: DX server did not reply
+                        let response = res_response.unwrap_or(-4); // -4 means: DX server did not reply
 
                         let response_text = match (response > 0) {
-                            true => {// In case of success, update pagewize data:
-                                pagewize_conn_id.set(response); // -> .write()
-                                // signed_in.set(true); //  -> *signed_in.write() . The button changes to "Sign out"
-                                *signed_in.write() = true;
+                            true => {// In case of success, update state variables:
+                                *pagewize_conn_id.write() = response;
+                                *signed_in.write() = true; // The button changes to "Sign out"
 
                                 format!("Login successful, connection id {}", response)
                             },
@@ -178,43 +176,32 @@ fn Login() -> Element {
 
                         response_msg.set(response_text);
 
-                    } else {
+                    } else { // *signed_in.read() == true
                         // Sign out user
                         // Calls the server fn 'logout'.
 
-                        /*
-                        // modify pagewize vars.
-                        response_msg.set(format!("{}", res_logout));
-                        //signed_in.set(false);
-                        *signed_in.write() = false;
-
-                        user_login.set(String::new());
-                        cleartext_pwd.set(String::new());
-                        */
-                        // ->
-                        let res_logout = logout(pagewize_conn_id()).await;
+                        let res_logout = logout(*pagewize_conn_id.read()).await;
 
                         match res_logout {
                             Ok(msg_logout) => {
-                                // modify state vars.
+                                // modify state variables.
                                 response_msg.set(format!("{}", msg_logout));
-                                //signed_in.set(false);
                                 *signed_in.write() = false;
 
                                 user_login.set(String::new());
                                 cleartext_pwd.set(String::new());
+
+                                *pagewize_conn_id.write() = 0;
                             },
                             Err(e) => {
-                                response_msg.set(format!("Tried to logout from session {}. Error: {}", pagewize_conn_id(), e));
+                                response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
                             }
                         }
-                    }
+                    } // end of "if *signed_in.read() ..."
                 }, // end of 'onclick'
                 {button_text()}
             } // end of 'button'
         } // end of div
-
-
     } // end of rsx!
 } // end of component
 
