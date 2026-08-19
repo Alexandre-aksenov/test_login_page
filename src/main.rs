@@ -86,14 +86,12 @@ fn Login() -> Element {
     };
      */
 
-    if *signed_in.read() == false {
-        {button_text.set(String::from("Sign in"));
-            response_msg.set(String::from("Please, sign in"));
-        }
-    } else {
-        { button_text.set(String::from("Sign out"));
-            response_msg.set(String::from("You are signed in")); // TOADD info: as user_login
-        }
+    if *signed_in.read() {
+        button_text.set(String::from("Sign out"));
+        response_msg.set(String::from("You are signed in")); // TOADD info: as user_login
+    } else { // This screen appears on the 1st load
+        button_text.set(String::from("Sign in"));
+        response_msg.set(String::from("Please, sign in"));
     }
 
     rsx! {
