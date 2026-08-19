@@ -69,26 +69,22 @@ fn Signup() -> Element {
 /// Login / logout page
 #[component]
 fn Login() -> Element {
+    // Signal variables (visible in the window)
     let mut signed_in = use_persistent("signed_in", || false);
 
-    let mut user_login = use_signal(|| String::new()); // -> use_persistent
+    let mut user_login = use_persistent("user_login", || String::new());
+    let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
+
+    let mut candidate_user_login = use_signal(|| String::new());
     let mut cleartext_pwd = use_signal(|| String::new());
 
     let mut response_msg: Signal<String> = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
 
-    let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
-
-    /*
-    response_msg = match *signed_in.read() {
-        true => format!("You are signed in with connection ID {}", *pagewize_conn_id.read()),
-        false => String::from("Please, sign in"),
-    };
-     */
-
+    // initialization depending on whether the user is signed in
     if *signed_in.read() {
         button_text.set(String::from("Sign out"));
-        response_msg.set(String::from("You are signed in")); // TOADD info: as user_login
+        response_msg.set(format!("You are signed in as: {}", *user_login.read()));
     } else { // This screen appears on the 1st load
         button_text.set(String::from("Sign in"));
         response_msg.set(String::from("Please, sign in"));
@@ -100,7 +96,6 @@ fn Login() -> Element {
                 "{response_msg}"
             }
 
-        // if signed_in() == false { // -> *signed_in.read()
         if *signed_in.read() == false {
             div {
                 class: "row col2",
@@ -109,7 +104,8 @@ fn Login() -> Element {
                         type : "text",
                         placeholder: "Login",
                         oninput: move |event| {
-                            user_login.set(event.value());
+                            // user_login.set(event.value());
+                            candidate_user_login.set(event.value());
                         },
                     }
                 }
@@ -138,8 +134,9 @@ fn Login() -> Element {
 
                         let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
-                        let res_response = login(user_login(), hashed_pwd).await;
+                        // let res_response = login(user_login(), hashed_pwd).await;
                         // -> *user_login.read()
+                        let res_response = login(candidate_user_login(), hashed_pwd).await;
 
                         let response = res_response.unwrap_or(-4); // -4 means: DX server did not reply
 
@@ -147,6 +144,11 @@ fn Login() -> Element {
                             true => {// In case of success, update state variables:
                                 *pagewize_conn_id.write() = response;
                                 *signed_in.write() = true; // The button changes to "Sign out"
+                                *user_login.write() = candidate_user_login.read().clone();
+
+                                // clear. Not necessary in current ver
+                                // candidate_user_login.set(String::new());
+
 
                                 format!("Login successful, connection id {}", response)
                             },
