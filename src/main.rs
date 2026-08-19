@@ -169,7 +169,6 @@ fn Login() -> Element {
                             true => {// In case of success, update pagewize data:
                                 pagewize_conn_id.set(response); // -> .write()
                                 // signed_in.set(true); //  -> *signed_in.write() . The button changes to "Sign out"
-                                // *signed_in.write(true); // error[E0061]: this method takes 0 arguments but 1 argument was supplied
                                 *signed_in.write() = true;
 
                                 format!("Login successful, connection id {}", response)
@@ -182,12 +181,8 @@ fn Login() -> Element {
                     } else {
                         // Sign out user
                         // Calls the server fn 'logout'.
-                        let res_logout = logout(pagewize_conn_id()).await.unwrap(); // -> *pagewize_conn_id.read()
-                        // 'unwrap' (can panic!) considers that 'pagewize_conn_id' is accurate.
-                        // This is true when 'logout' is called after 'login' succeeds,
-                        // but panics if, for example, 'logout' is clicked twice
-                        // (which should not happen in this App).
 
+                        /*
                         // modify pagewize vars.
                         response_msg.set(format!("{}", res_logout));
                         //signed_in.set(false);
@@ -195,6 +190,24 @@ fn Login() -> Element {
 
                         user_login.set(String::new());
                         cleartext_pwd.set(String::new());
+                        */
+                        // ->
+                        let res_logout = logout(pagewize_conn_id()).await;
+
+                        match res_logout {
+                            Ok(msg_logout) => {
+                                // modify state vars.
+                                response_msg.set(format!("{}", msg_logout));
+                                //signed_in.set(false);
+                                *signed_in.write() = false;
+
+                                user_login.set(String::new());
+                                cleartext_pwd.set(String::new());
+                            },
+                            Err(e) => {
+                                response_msg.set(format!("Tried to logout from session {}. Error: {}", pagewize_conn_id(), e));
+                            }
+                        }
                     }
                 }, // end of 'onclick'
                 {button_text()}
