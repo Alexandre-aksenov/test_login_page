@@ -10,36 +10,9 @@ use hex;
 #[cfg(feature = "server")]
 use axum::extract::Query;
 
-/*
-/// Copied from the lesson.
-#[cfg(feature = "server")]
-#[tokio::main]
-async fn main() {
-    // let address = dioxus::cli_config::fullstack_address_or_localhost();
-    // let listener = tokio::net::TcpListener::bind(address).await.unwrap();
 
-    // axum::serve(listener).await.unwrap();
-    // -> error[E0061]: this function takes 2 arguments but 1 argument was supplied
-    // If this line is commented out: [dev] Application [server] exited gracefully.
 
-    // Fix by RR:
-    // axum::serve(listener, axum::Router::new()).await.unwrap();
-
-    dioxus::launch(App);
-}
-*/
-
-/*
-A fn like this is present in the code of the lesson,
-but a part of it seems not to be needed for this project.
-
-It contains:
-    creation of a table (I did that separately in psql),
-    connection to Google (not done for now),
-    axum::serve(listener, router).await.unwrap() : this may in fact be necessary.
-*/
-
-// const FAVICON: Asset = asset!("/assets/favicon.ico");
+const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 const HEADER_SVG: Asset = asset!("/assets/header.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
@@ -93,7 +66,7 @@ fn Signup() -> Element {
     }
 }
 
-// fn Login() -> Element {
+/// Login / logout page
 #[component]
 fn Login() -> Element {
     let mut signed_in = use_persistent("signed_in", || false);
@@ -101,8 +74,7 @@ fn Login() -> Element {
     let mut user_login = use_signal(|| String::new()); // -> use_persistent
     let mut cleartext_pwd = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
-    // let mut pagewize_conn_id: Signal<i32> = use_signal(|| 0); // -> use_persistent
-    // -> (TOADAPT usage)
+
     let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
 
     let mut response_msg: Signal<String> = use_signal(|| String::from("Please, sign in"));
