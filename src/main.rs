@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
+use dioxus_sdk_storage::use_persistent; // for persistent storage of login info
 
-use sha3_rust::sha3_256; // for hashing the pwd in the DX client
+use sha3_rust::sha3_256; // for hashing the pwd in the DX client (frontend)
 use hex;
 
 // use dioxus_shareables::{shareable, List, ListEntry};
@@ -95,18 +96,20 @@ fn Signup() -> Element {
 // fn Login() -> Element {
 #[component]
 fn Login() -> Element {
-    let mut signed_in = use_signal(|| false);
-    let mut user_login = use_signal(|| String::new());
+    // let mut signed_in = use_signal(|| false); // -> use_persistent
+    // ->
+    let mut signed_in = use_persistent("signed_in", || false);
+
+    let mut user_login = use_signal(|| String::new()); // -> use_persistent
     let mut cleartext_pwd = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
-    let mut pagewize_conn_id: Signal<i32> = use_signal(|| 0);
+    let mut pagewize_conn_id: Signal<i32> = use_signal(|| 0); // -> use_persistent
 
-    // let mut response_msg = use_signal(|| String::new());
-    // ->
     let mut response_msg: Signal<String> = use_signal(|| String::from("Please, sign in"));
 
 
-    if signed_in() == false {
+    // if signed_in() == false { // -> *signed_in.read()
+    if *signed_in.read() == false {
         button_text.set(String::from("Sign in")); // button appears on the 1st load
     } else {
         button_text.set(String::from("Sign out"));
@@ -118,7 +121,8 @@ fn Login() -> Element {
                 "{response_msg}"
             }
 
-        if signed_in() == false {
+        // if signed_in() == false { // -> *signed_in.read()
+        if *signed_in.read() == false {
             div {
                 class: "row col2",
                 div {
@@ -142,27 +146,32 @@ fn Login() -> Element {
             },
         }
 
-        // Button "Sign up"/"Sign in" described by the future var 'button_text'. TOADAPT
-        // this button can look more like a button after changes in CSS.
-        // Call the server fn,
-        // -> response_msg
+        // Button "Sign up"/"Sign in" described by the variable 'button_text'.
+        // this button can look more like a button after changes in CSS. TOADAPT
+        // Calls the server fn.
         div {
             button {
                 class : "btn-primary",
                 onclick : move |_| async move {
-                    if signed_in() == false {
+                    // if signed_in() == false { // -> *signed_in.read()
+                    if *signed_in.read() == false {
                         // Sign-in user
                         // Calls the server fn 'login'
 
                         let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
                         let res_response = login(user_login(), hashed_pwd).await;
-                        let response = res_response.unwrap_or(-4); // DX server did not reply
+                        // -> *user_login.read()
+
+                        let response = res_response.unwrap_or(-4); // means: DX server did not reply
 
                         let response_text = match (response > 0) {
                             true => {// In case of success, update pagewize data:
-                                pagewize_conn_id.set(response);
-                                signed_in.set(true); // The button changed to "Sign out"
+                                pagewize_conn_id.set(response); // -> .write()
+                                // signed_in.set(true); //  -> *signed_in.write() . The button changes to "Sign out"
+                                // *signed_in.write(true); // error[E0061]: this method takes 0 arguments but 1 argument was supplied
+                                *signed_in.write() = true;
+
                                 format!("Login successful, connection id {}", response)
                             },
                             false => format!("Login failed, code {}", response),
@@ -173,15 +182,17 @@ fn Login() -> Element {
                     } else {
                         // Sign out user
                         // Calls the server fn 'logout'.
-                        let res_logout = logout(pagewize_conn_id()).await.unwrap();
-                        // 'unwrap' considers that 'pagewize_conn_id' is accurate.
+                        let res_logout = logout(pagewize_conn_id()).await.unwrap(); // -> *pagewize_conn_id.read()
+                        // 'unwrap' (can panic!) considers that 'pagewize_conn_id' is accurate.
                         // This is true when 'logout' is called after 'login' succeeds,
                         // but panics if, for example, 'logout' is clicked twice
                         // (which should not happen in this App).
 
                         // modify pagewize vars.
                         response_msg.set(format!("{}", res_logout));
-                        signed_in.set(false);
+                        //signed_in.set(false);
+                        *signed_in.write() = false;
+
                         user_login.set(String::new());
                         cleartext_pwd.set(String::new());
                     }
