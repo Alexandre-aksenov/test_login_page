@@ -199,7 +199,6 @@ fn Login() -> Element {
             }
 
             // Button "Sign in"/"Sign out" described by the variable 'button_text'.
-            // this button can look more like a button after changes in CSS. TOADAPT
             // Calls the server fn.
             div {
                 button {

@@ -42,7 +42,7 @@ body {
     max-width: 1200px;
 }
 
-btn-primary {
+.btn-primary {
     color: white;
     text-decoration: none;
     margin-top: 20px;
@@ -55,9 +55,26 @@ btn-primary {
 
 fieldset {
     display: flex;
-    border: 0px;
-    border-top: 1px solid #958bb4;
-    padding: 0px;
-    margin:20px 0px 0px 0px;
-    padding-top:20px;
+    flex-direction: column;
+    border: 1px solid #958bb4;
+    padding: 20px;
+    margin: 20px 0px 0px 0px;
+    gap: 15px;
+}
+
+.row.col2 {
+    display: flex;
+    gap: 10px;
+}
+
+.msg {
+    margin-bottom: 10px;
+}
+
+input[type="text"], input[type="password"] {
+    padding: 8px;
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    background-color: #1a1c23;
+    color: white;
 }
