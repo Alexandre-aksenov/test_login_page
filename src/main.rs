@@ -117,7 +117,9 @@ fn Signup() -> Element {  // ADAPT the CLI 'signup'
                                 },
                                 Err(err_msg) => {message.set(format!("{}", err_msg));},
                             }
-                        } // end of check for a nontrivial login, pwd
+                        } else {
+                        message.set(format!("Login or password should be of >= 4 symbols. Received: {}, {}", candidate_user_login().chars().count(), cleartext_pwd().chars().count()));
+                    } // end of check for a nontrivial login, pwd
 
                 }, // end of onclick action
                 "Sign up"
