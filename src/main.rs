@@ -66,6 +66,12 @@ fn Signup() -> Element {  // ADAPT the CLI 'signup'
 
     let mut signed_up = use_signal(|| false);
     let mut message = use_signal(|| String::from("Sign up as a new user"));
+    let mut message_end_page = use_signal(|| String::new());
+
+    message_end_page.set(
+        format!("Len of current Login and password: {}, {}",
+                candidate_user_login().chars().count(),
+                cleartext_pwd().chars().count()));
 
     rsx! {
         div {
@@ -96,7 +102,7 @@ fn Signup() -> Element {  // ADAPT the CLI 'signup'
                 }
             },
 
-            // Button
+            // Button , TOFIX
             button {
                 class : "btn-primary",
                 onclick: move |_|  async move {
@@ -115,10 +121,10 @@ fn Signup() -> Element {  // ADAPT the CLI 'signup'
                                     signed_up.set(true);
                                     message.set(signup_msg);
                                 },
-                                Err(err_msg) => {message.set(format!("{}", err_msg));},
+                                Err(err_msg) => {message.set(format!("Could not reach middleware: {}", err_msg));},
                             }
                         } else {
-                        message.set(format!("Login or password should be of >= 4 symbols. Received: {}, {}", candidate_user_login().chars().count(), cleartext_pwd().chars().count()));
+                        message.set(format!("Login and password should be of >= 4 symbols. Received: {}, {}", candidate_user_login().chars().count(), cleartext_pwd().chars().count()));
                     } // end of check for a nontrivial login, pwd
 
                 }, // end of onclick action
@@ -126,6 +132,11 @@ fn Signup() -> Element {  // ADAPT the CLI 'signup'
             } // end of button
 
         } // end of if signed_up() == false
+
+        div {
+            class : "msg",
+            "{message_end_page}"
+        }
     } // end of rsx!
 }
 
@@ -288,7 +299,7 @@ async fn register(
 
     let reply = match res_client { // Result<String, ServerFnError>
         Ok((mut client, connection)) => {
-            // Process 'connection'
+            // Process 'connection', TOADD like in other middleware fns
 
             // Query
             let query = format!("call signup(login => '{}', pwd => '{}')", login, hash_pwd);
