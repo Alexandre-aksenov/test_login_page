@@ -166,97 +166,103 @@ fn Login() -> Element {
     }
 
     rsx! {
-        div {
-            class : "msg",
-            "{response_msg}"
-        }
+        fieldset { // gray rectangle. Seems to have no effect...
+            legend { "Account" }
 
-        if *signed_in.read() == false {
             div {
-                class: "row col2",
+                class : "msg",
+                "{response_msg}"
+            }
+
+            if *signed_in.read() == false {
                 div {
-                    input {
-                        type : "text",
-                        placeholder: "Login",
-                        oninput: move |event| {
-                            candidate_user_login.set(event.value());
-                        },
-                    }
-                }
-                div {
-                    input {
-                        type : "text", // will be "password" in the deployed version
-                        placeholder: "Password",
-                        oninput: move |event| {
-                            cleartext_pwd.set(event.value());
-                        },
-                    }
-                }
-            },
-        }
-
-        // Button "Sign in"/"Sign out" described by the variable 'button_text'.
-        // this button can look more like a button after changes in CSS. TOADAPT
-        // Calls the server fn.
-        div {
-            button {
-                class : "btn-primary",
-                onclick : move |_| async move {
-                    if *signed_in.read() == false {
-                        // Sign-in user
-                        // Calls the middleware fn 'login'
-
-                        let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
-
-                        let res_response = login(candidate_user_login(), hashed_pwd).await;
-
-                        let response = res_response.unwrap_or(-4); // -4 means: DX server did not reply
-
-                        let response_text = match (response > 0) {
-                            true => {// In case of success, update state variables:
-                                *pagewize_conn_id.write() = response;
-                                *signed_in.write() = true; // The button changes to "Sign out"
-                                *user_login.write() = candidate_user_login.read().clone();
-
-                                // clear candidate login (local var to this session).
-                                candidate_user_login.set(String::new());
-
-                                format!("Login successful, connection id {}", response)
+                    class: "row col2",
+                    div {
+                        input {
+                            type : "text",
+                            placeholder: "Login",
+                            oninput: move |event| {
+                                candidate_user_login.set(event.value());
                             },
-                            false => format!("Login failed, code {}", response),
-                        };
-
-                        response_msg.set(response_text);
-
-                    } else { // *signed_in.read() == true
-                        // Sign out user
-                        // Calls the server fn 'logout'.
-
-                        let res_logout = logout(*pagewize_conn_id.read()).await;
-
-                        match res_logout {
-                            Ok(msg_logout) => {
-                                // modify state variables.
-                                response_msg.set(format!("{}", msg_logout));
-                                *signed_in.write() = false;
-
-                                user_login.set(String::new());
-                                cleartext_pwd.set(String::new());
-
-                                *pagewize_conn_id.write() = 0;
-                            },
-                            Err(e) => {
-                                response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
-                            }
                         }
-                    } // end of "if *signed_in.read() ..."
-                }, // end of 'onclick'
-                {button_text()}
-            } // end of 'button'
-        } // end of div
+                    }
+                    div {
+                        input {
+                            type : "text", // will be "password" in the deployed version
+                            placeholder: "Password",
+                            oninput: move |event| {
+                                cleartext_pwd.set(event.value());
+                            },
+                        }
+                    }
+                },
+            }
+
+            // Button "Sign in"/"Sign out" described by the variable 'button_text'.
+            // this button can look more like a button after changes in CSS. TOADAPT
+            // Calls the server fn.
+            div {
+                button {
+                    class : "btn-primary",
+                    onclick : move |_| async move {
+                        if *signed_in.read() == false {
+                            // Sign-in user
+                            // Calls the middleware fn 'login'
+
+                            let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
+
+                            let res_response = login(candidate_user_login(), hashed_pwd).await;
+
+                            let response = res_response.unwrap_or(-4); // -4 means: DX server did not reply
+
+                            let response_text = match (response > 0) {
+                                true => {// In case of success, update state variables:
+                                    *pagewize_conn_id.write() = response;
+                                    *signed_in.write() = true; // The button changes to "Sign out"
+                                    *user_login.write() = candidate_user_login.read().clone();
+
+                                    // clear candidate login (local var to this session).
+                                    candidate_user_login.set(String::new());
+
+                                    format!("Login successful, connection id {}", response)
+                                },
+                                false => format!("Login failed, code {}", response),
+                            };
+
+                            response_msg.set(response_text);
+
+                        } else { // *signed_in.read() == true
+                            // Sign out user
+                            // Calls the server fn 'logout'.
+
+                            let res_logout = logout(*pagewize_conn_id.read()).await;
+
+                            match res_logout {
+                                Ok(msg_logout) => {
+                                    // modify state variables.
+                                    response_msg.set(format!("{}", msg_logout));
+                                    *signed_in.write() = false;
+
+                                    user_login.set(String::new());
+                                    cleartext_pwd.set(String::new());
+
+                                    *pagewize_conn_id.write() = 0;
+                                },
+                                Err(e) => {
+                                    response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
+                                }
+                            }
+                        } // end of "if *signed_in.read() ..."
+                    }, // end of 'onclick'
+                    {button_text()}
+                } // end of 'button'
+            } // end of div
+        } // end of fieldset
+
+        div {"logged-in game will appear here"}
+
     } // end of rsx!
 } // end of component
-
 
 /*
 #[component]
