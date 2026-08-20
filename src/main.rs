@@ -210,14 +210,43 @@ pub fn Home() -> Element {
 
 
 // Server-side code. TOADAPT from the previous examples.
-//
-/*
+/// Register a new user in DB. The password has already been hashed in the browser.
 #[server()]
 async fn register(
-    login: &str,
-    hash_pwd: &str
+    login: String,
+    hash_pwd: String
 ) -> Result<String, ServerFnError>
-*/
+{
+    // import
+    use tokio_postgres::NoTls;
+
+    // establish a connection
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+
+    let reply = match res_client { // Result<String, ServerFnError>
+        Ok((mut client, connection)) => {
+            // Process 'connection'
+
+            // Query
+            let query = format!("call signup(login => '{}', pwd => '{}')", login, hash_pwd);
+            let res_signup = client.execute(&query, &[]).await; // -> Should be: Result<u64, Error>
+
+            // Process the result
+            match res_signup {
+                Ok(_) => Ok("Signed up successfully".to_string()),
+                Err(e) => Err(ServerFnError::Request(dioxus_fullstack::RequestError::Body(format!("Signup failed: {}", e))))
+            }
+        },
+        Err(e) => { Err(ServerFnError::Request(dioxus_fullstack::RequestError::Request(format!("Failed to connect to database while attempting to sign up: {}", e)))) }
+        // Err(ServerFnError::Request(dioxus_fullstack::RequestError::Request(format!("Failed to connect to database while attempting to sign_out: {}", e))))
+    };
+
+    match reply {
+        Ok(reply) => Ok(reply),
+        Err(e) => Err(e),
+    }
+}
+
 
 /// Returns:
 /// new connection_id > 0 if connection to DB is successful.
@@ -236,7 +265,6 @@ async fn login(
     let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
 
     let connection_id = match res_client {
-        // Ok(mut client) => {
         Ok((mut client, connection)) => {
 
             // Suggested by Junie (1st answer of 15-16/8/2026
@@ -313,8 +341,6 @@ async fn logout(
             Err(ServerFnError::Request(dioxus_fullstack::RequestError::Request(format!("Failed to connect to database while attempting to sign_out: {}", e))))
         }
     }; // end: let reply =
-
-    // reply // -> expected `Result<String, ServerFnError>`, found `Result<String, String>`
 
     match reply {
         Ok(reply) => Ok(reply),
