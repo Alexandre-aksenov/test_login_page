@@ -60,11 +60,73 @@ fn Trial() -> Element {
 }
 
 #[component]
-fn Signup() -> Element {
+fn Signup() -> Element {  // ADAPT the CLI 'signup'
+    let mut candidate_user_login = use_signal(|| String::new());
+    let mut cleartext_pwd = use_signal(|| String::new());
+
+    let mut signed_up = use_signal(|| false);
+    let mut message = use_signal(|| String::from("Sign up as a new user"));
+
     rsx! {
-        div { "Sign up" } // ADAPT the CLI 'signup'
-    }
+        div {
+            class : "msg",
+            "{message}"
+        }
+
+        if signed_up() == false {
+            div {
+                class: "row col2",
+                div {
+                    input {
+                        type : "text",
+                        placeholder: "Login",
+                        oninput: move |event| {
+                            candidate_user_login.set(event.value());
+                        },
+                    }
+                }
+                div {
+                    input {
+                        type : "text", // will be "password" in the deployed version
+                        placeholder: "Password",
+                        oninput: move |event| {
+                            cleartext_pwd.set(event.value());
+                        },
+                    }
+                }
+            },
+
+            // Button
+            button {
+                class : "btn-primary",
+                onclick: move |_|  async move {
+                    // check whether nontrivial login, password have been supplied
+                    if (candidate_user_login().chars().count() > 3) && (cleartext_pwd().chars().count() > 3)
+                        {
+                            // compute password hash
+                            let pwd_hash_keccak256 = sha3_256(cleartext_pwd().as_bytes()); // [u8; 32]
+                            let hash_str = hex::encode(pwd_hash_keccak256); // String of hex digits
+
+                            // call middleware fn
+                            let res_signup = register(candidate_user_login(), hash_str).await;
+
+                            match res_signup {
+                                Ok(signup_msg) => {
+                                    signed_up.set(true);
+                                    message.set(signup_msg);
+                                },
+                                Err(err_msg) => {message.set(format!("{}", err_msg));},
+                            }
+                        } // end of check for a nontrivial login, pwd
+
+                }, // end of onclick action
+                "Sign up"
+            } // end of button
+
+        } // end of if signed_up() == false
+    } // end of rsx!
 }
+
 
 /// Login / logout page
 #[component]
@@ -104,7 +166,6 @@ fn Login() -> Element {
                         type : "text",
                         placeholder: "Login",
                         oninput: move |event| {
-                            // user_login.set(event.value());
                             candidate_user_login.set(event.value());
                         },
                     }
@@ -121,7 +182,7 @@ fn Login() -> Element {
             },
         }
 
-        // Button "Sign up"/"Sign in" described by the variable 'button_text'.
+        // Button "Sign in"/"Sign out" described by the variable 'button_text'.
         // this button can look more like a button after changes in CSS. TOADAPT
         // Calls the server fn.
         div {
@@ -130,7 +191,7 @@ fn Login() -> Element {
                 onclick : move |_| async move {
                     if *signed_in.read() == false {
                         // Sign-in user
-                        // Calls the server fn 'login'
+                        // Calls the middleware fn 'login'
 
                         let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
