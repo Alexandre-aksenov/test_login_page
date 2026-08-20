@@ -60,7 +60,7 @@ fn Trial() -> Element {
 }
 
 #[component]
-fn Signup() -> Element {  // ADAPT the CLI 'signup'
+fn Signup() -> Element {
     let mut candidate_user_login = use_signal(|| String::new());
     let mut cleartext_pwd = use_signal(|| String::new());
 
@@ -102,17 +102,19 @@ fn Signup() -> Element {  // ADAPT the CLI 'signup'
                 }
             },
 
-            // Button , TOFIX
+            // Button "Sign up"
             button {
                 class : "btn-primary",
                 onclick: move |_|  async move {
                     // check whether nontrivial login, password have been supplied
                     if (candidate_user_login().chars().count() > 3) && (cleartext_pwd().chars().count() > 3)
                         {
+                            message.set(String::from("Signing up..."));
                             // compute password hash
                             let pwd_hash_keccak256 = sha3_256(cleartext_pwd().as_bytes()); // [u8; 32]
                             let hash_str = hex::encode(pwd_hash_keccak256); // String of hex digits
 
+                            message.set(String::from("Password hash computed"));
                             // call middleware fn
                             let res_signup = register(candidate_user_login(), hash_str).await;
 
@@ -283,7 +285,7 @@ pub fn Home() -> Element {
 
 
 
-// Server-side code. TOADAPT from the previous examples.
+// Middleware-side code.
 /// Register a new user in DB. The password has already been hashed in the browser.
 #[server()]
 async fn register(
@@ -299,7 +301,12 @@ async fn register(
 
     let reply = match res_client { // Result<String, ServerFnError>
         Ok((mut client, connection)) => {
-            // Process 'connection', TOADD like in other middleware fns
+            // Spawn 'connection'.
+            tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
 
             // Query
             let query = format!("call signup(login => '{}', pwd => '{}')", login, hash_pwd);
@@ -312,7 +319,6 @@ async fn register(
             }
         },
         Err(e) => { Err(ServerFnError::Request(dioxus_fullstack::RequestError::Request(format!("Failed to connect to database while attempting to sign up: {}", e)))) }
-        // Err(ServerFnError::Request(dioxus_fullstack::RequestError::Request(format!("Failed to connect to database while attempting to sign_out: {}", e))))
     };
 
     match reply {
@@ -341,7 +347,7 @@ async fn login(
     let connection_id = match res_client {
         Ok((mut client, connection)) => {
 
-            // Suggested by Junie (1st answer of 15-16/8/2026
+            // Spawn 'connection'.
             tokio::spawn(async move {
                 if let Err(e) = connection.await {
                     eprintln!("connection error: {}", e);
@@ -389,7 +395,7 @@ async fn logout(
         Ok((mut client, connection)) => {
             // Logout call itself
 
-            // Suggested by Junie (1st answer of 15-16/8/2026
+            // Spawn 'connection'.
             tokio::spawn(async move {
                 if let Err(e) = connection.await {
                     eprintln!("connection error during logout: {}", e);
@@ -400,17 +406,13 @@ async fn logout(
             let res_logout = client.execute(&query_logout, &[]).await;
 
             match res_logout {
-                // Ok(_) => String::from("Logged out successfully."),
                 Ok(_) => Ok(String::from("Logged out successfully.")),
-                // Err(e) => Err(format!("Failed to sign_out: {}", e)),
                 Err(e) => Err(ServerFnError::Request(dioxus_fullstack::RequestError::Body(format!("Failed to sign_out: {}", e)))),
             }
 
         },
         Err(e) => {
             eprintln!("Failed to connect to database: {}", e);
-            // String::from("Failed to connect to database while attempting to sign_out.")
-            // Err(format!("Failed to connect to database while attempting to sign_out: {}", e))
 
             Err(ServerFnError::Request(dioxus_fullstack::RequestError::Request(format!("Failed to connect to database while attempting to sign_out: {}", e))))
         }
