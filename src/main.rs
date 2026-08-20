@@ -134,8 +134,6 @@ fn Login() -> Element {
 
                         let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
-                        // let res_response = login(user_login(), hashed_pwd).await;
-                        // -> *user_login.read()
                         let res_response = login(candidate_user_login(), hashed_pwd).await;
 
                         let response = res_response.unwrap_or(-4); // -4 means: DX server did not reply
@@ -146,9 +144,8 @@ fn Login() -> Element {
                                 *signed_in.write() = true; // The button changes to "Sign out"
                                 *user_login.write() = candidate_user_login.read().clone();
 
-                                // clear. Not necessary in current ver
-                                // candidate_user_login.set(String::new());
-
+                                // clear candidate login (local var to this session).
+                                candidate_user_login.set(String::new());
 
                                 format!("Login successful, connection id {}", response)
                             },
@@ -222,23 +219,20 @@ async fn register(
 ) -> Result<String, ServerFnError>
 */
 
-/// <- ../login_proc_db_v2/src/main.rs
-/// new connection_id = -1 should be returned if error on connection to DB.
-/// new connection_id = -2 should be returned if the row does not contain "new_connection_id"
-///    (which it should according to the signature of the DB procedure).
-/// new connection_id = -3 should be returned if login is rejected by DB.
+/// Returns:
+/// new connection_id > 0 if connection to DB is successful.
+///  -1 should be returned if error on connection to DB.
+///  -2 should be returned if the row does not contain "new_connection_id"
+///    (should not happen according to the signature of the DB procedure).
+///  -3 if login is rejected by DB (because the user does not exist or the password is wrong).
 #[server()]
 async fn login(
-    user_login: String, // &str -> error[E0521]: borrowed data escapes outside of function
+    user_login: String, // if &str -> error[E0521]: borrowed data escapes outside of function
     hash_pwd: String
 ) -> Result<i32, ServerFnError> // <- dioxus::prelude::ServerFnError
 {
-    // use postgres::{Client, NoTls};
-    // ->
     use tokio_postgres::NoTls;
 
-    // let res_client = Client::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls);
-    // ->
     let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
 
     let connection_id = match res_client {
@@ -254,15 +248,12 @@ async fn login(
 
 
             let query_login = format!("call sign_in(login => '{}', pwd => '{}');", &user_login, &hash_pwd);
-            // let res_login = client.query_one(&query_login, &[]);
-            // ->
             let res_login = client.query_one(&query_login, &[]).await;
 
             let mut new_connection_id: i32 = 0;
 
             match res_login {
                 Ok(row) => {
-                    // new_connection_id = row.get("new_connection_id"); // ->
                     new_connection_id = row.try_get("new_connection_id").unwrap_or(-2);
                 }
                 Err(e) => {
