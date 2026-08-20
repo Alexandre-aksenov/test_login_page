@@ -4,8 +4,6 @@ use dioxus_sdk_storage::use_persistent; // for persistent storage of login info
 use sha3_rust::sha3_256; // for hashing the pwd in the DX client (frontend)
 use hex;
 
-// use dioxus_shareables::{shareable, List, ListEntry};
-// TOADD: backend, which communicates with PostgreSQL
 
 #[cfg(feature = "server")]
 use axum::extract::Query;
@@ -31,8 +29,8 @@ enum Route {
     Login {},
     #[route("/signup")]
     Signup {},
-    #[route("/signed_in_game")]
-    Game {},
+    // #[route("/signed_in_game")]
+    // Game {},
 }
 
 /// Main fn for the frontend.
@@ -143,7 +141,7 @@ fn Signup() -> Element {
 }
 
 
-/// Login / logout page
+/// Login / logout page, + signed-in game (TOADD)
 #[component]
 fn Login() -> Element {
     // Signal variables (visible in the window)
@@ -168,10 +166,10 @@ fn Login() -> Element {
     }
 
     rsx! {
-            div {
-                class : "msg",
-                "{response_msg}"
-            }
+        div {
+            class : "msg",
+            "{response_msg}"
+        }
 
         if *signed_in.read() == false {
             div {
@@ -260,13 +258,14 @@ fn Login() -> Element {
 } // end of component
 
 
+/*
 #[component]
 fn Game() -> Element {
     rsx! {
         div { "logged-in game" }
     }
 }
-
+*/
 
 #[component]
 pub fn Home() -> Element {

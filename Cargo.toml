@@ -23,9 +23,6 @@ tokio-postgres = { version = "0.7.13", optional = true }
 sha3-rust = "0.1.1"
 hex = "0.4.3"
 
-# For storing connection data in an accessile way to all pages:
-dioxus-shareables = "0.3.0"
-# See: https://docs.rs/dioxus-shareables/latest/dioxus_shareables/
 
 # For storing login info so that it persists page reload:
 dioxus-sdk-storage = "0.7.0"
