@@ -471,7 +471,12 @@ async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError
                     // default reply
                     // Ok(Vec::new())
                     // ->
-                    serde_postgres::from_rows(&vec_row_levels)? // expected `tokio_postgres::row::Row`, found `tokio_postgres::Row`
+                    // serde_postgres::from_rows(&vec_row_levels)? // expected `tokio_postgres::row::Row`, found `tokio_postgres::Row`
+                    // ->
+                    match serde_postgres::from_rows(&vec_row_levels) {
+                        Ok(levels) => Ok(levels),
+                        Err(e) => Err(ServerFnError::Request(dioxus_fullstack::RequestError::Body(format!("Incorrect response format from levels: {}", e))))
+                    }
                 },
                 Err(e) => {Err(ServerFnError::Request(dioxus_fullstack::RequestError::Body(format!("Failed to get list of levels: {}", e))))},
             }
