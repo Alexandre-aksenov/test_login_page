@@ -326,7 +326,7 @@ async fn register(
 
             // Query
             let query = format!("call signup(login => '{}', pwd => '{}')", login, hash_pwd);
-            let res_signup = client.execute(&query, &[]).await; // -> Should be: Result<u64, Error>
+            let res_signup = client.execute(query.as_str(), &[]).await; // -> Should be: Result<u64, Error>
 
             // Process the result
             match res_signup {
@@ -372,7 +372,7 @@ async fn login(
 
 
             let query_login = format!("call sign_in(login => '{}', pwd => '{}');", &user_login, &hash_pwd);
-            let res_login = client.query_one(&query_login, &[]).await;
+            let res_login = client.query_one(query_login.as_str(), &[]).await;
 
             let mut new_connection_id: i32 = 0;
 
@@ -419,7 +419,7 @@ async fn logout(
             });
 
             let query_logout = format!("call logout(session_id => {});", connection_id);
-            let res_logout = client.execute(&query_logout, &[]).await;
+            let res_logout = client.execute(query_logout.as_str(), &[]).await;
 
             match res_logout {
                 Ok(_) => Ok(String::from("Logged out successfully.")),
@@ -462,7 +462,7 @@ async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError
             });
 
             let query_levels = format!("select * from list_levels(u_login => '{}');", &user_login);
-            let res_table_lvls = client.query(&query_levels, &[]).await;
+            let res_table_lvls = client.query(query_levels.as_str(), &[]).await;
             // Result<Vec<Row>>
 
             // process the answer of DB
