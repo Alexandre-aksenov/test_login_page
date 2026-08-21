@@ -446,6 +446,8 @@ async fn logout(
 async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError>
 {
     use tokio_postgres::NoTls;
+    // use serde_postgres::types::ToSql; // RR's suggestion
+    use serde_postgres;
 
     let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
 
@@ -467,7 +469,9 @@ async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError
             match res_table_lvls {
                 Ok(vec_row_levels) => {
                     // default reply
-                    Ok(Vec::new())
+                    // Ok(Vec::new())
+                    // ->
+                    serde_postgres::from_rows(&vec_row_levels)? // expected `tokio_postgres::row::Row`, found `tokio_postgres::Row`
                 },
                 Err(e) => {Err(ServerFnError::Request(dioxus_fullstack::RequestError::Body(format!("Failed to get list of levels: {}", e))))},
             }
