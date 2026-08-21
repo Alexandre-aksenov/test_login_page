@@ -441,10 +441,49 @@ async fn logout(
 }
 
 
-
+/// Middleware fn to list levels and player's progress.
 #[server()]
 async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError>
 {
-    // default reply
-    Ok(Vec::new())
+    use tokio_postgres::NoTls;
+
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+
+    let reply = match res_client {
+        Ok((mut client, connection)) => {
+
+            // Spawn 'connection'.
+            tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
+
+            let query_levels = format!("select * from list_levels(u_login => '{}');", &user_login);
+            let res_table_lvls = client.query(&query_levels, &[]).await;
+            // Result<Vec<Row>>
+
+            // process the answer of DB
+            match res_table_lvls {
+                Ok(vec_row_levels) => {
+                    // default reply
+                    Ok(Vec::new())
+                },
+                Err(e) => {Err(ServerFnError::Request(dioxus_fullstack::RequestError::Body(format!("Failed to get list of levels: {}", e))))},
+            }
+
+            // default reply
+            // Ok(Vec::new())
+        },
+        Err(e) => {
+            eprintln!("Failed to connect to database: {}", e);
+
+            Err(ServerFnError::Request(dioxus_fullstack::RequestError::Request(format!("Failed to connect to database while attempting to get list of levels: {}", e))))
+        }
+    }; // end: let reply =
+
+    match reply {
+        Ok(reply) => Ok(reply),
+        Err(e) => Err(e),
+    }
 }
