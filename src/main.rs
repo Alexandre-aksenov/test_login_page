@@ -15,8 +15,16 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 const HEADER_SVG: Asset = asset!("/assets/header.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
-// shareable!(Numbers: List<usize> = [3, 5, 7].into_iter().collect());
+/// Corresponds to the structure of the table of levels in the DataBase fn list_levels.
+#[derive(serde::Serialize, serde::Deserialize)]
+struct LevelInfo{
+    level_id: i32,
+    full_fen: String,
+    goal:String,
+    won: bool,
+}
 
+// impl Level_info
 
 // https://dioxuslabs.com/learn/0.7/essentials/router/#creating-a-routable-enum
 #[derive(Routable, Clone, PartialEq)] // manual suggests adding the Debug trait
@@ -260,7 +268,7 @@ fn Login() -> Element {
 
         if *signed_in.read() == false {
             div {"Logged-in game will appear after logging in."}
-        } else {
+        } else { // TOADD
             div {"Logged-in game coming soon."}
         }
 
@@ -430,6 +438,13 @@ async fn logout(
         Ok(reply) => Ok(reply),
         Err(e) => Err(e),
     }
-
 }
 
+
+
+#[server()]
+async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError>
+{
+    // default reply
+    Ok(Vec::new())
+}

@@ -30,6 +30,9 @@ dioxus-sdk-storage = "0.7.0"
 
 # See: https://docs.rs/dioxus-sdk-storage/latest/dioxus_sdk_storage/
 
+# For quering positions from DB:
+serde = { version = "1.0.229", features = ["derive"] }
+
 [features]
 default = ["web"]
 web = ["dioxus/web"]

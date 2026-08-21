@@ -5646,6 +5646,7 @@ dependencies = [
  "dioxus",
  "dioxus-sdk-storage",
  "hex",
+ "serde",
  "sha3-rust",
  "tokio",
  "tokio-postgres",
