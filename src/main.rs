@@ -24,7 +24,14 @@ struct LevelInfo{
     won: bool,
 }
 
-// impl Level_info
+// display level info
+
+impl LevelInfo {
+    fn disp(&self) -> String {
+        format!("Level ID: {}, Full FEN: {}, Goal: {}, Won: {}", self.level_id, self.full_fen, self.goal, self.won)
+    }
+}
+
 
 // https://dioxuslabs.com/learn/0.7/essentials/router/#creating-a-routable-enum
 #[derive(Routable, Clone, PartialEq)] // manual suggests adding the Debug trait
@@ -164,6 +171,11 @@ fn Login() -> Element {
     let mut response_msg: Signal<String> = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
 
+    // signals for the logged-in minigame. To-make plan.
+    let mut open_list_levels = use_signal(|| false); // for testing backend fns
+    let mut user_list_levels: Signal<Vec<LevelInfo>> = use_signal(|| Vec::new());
+
+
     // initialization depending on whether the user is signed in
     if *signed_in.read() {
         button_text.set(String::from("Sign out"));
@@ -228,6 +240,11 @@ fn Login() -> Element {
                                     *signed_in.write() = true; // The button changes to "Sign out"
                                     *user_login.write() = candidate_user_login.read().clone();
 
+                                    user_list_levels.set(
+                                        list_levels((*user_login.read().clone()).to_string())
+                                        .await.unwrap_or(Vec::new())
+                                    );
+
                                     // clear candidate login (local var to this session).
                                     candidate_user_login.set(String::new());
 
@@ -246,7 +263,7 @@ fn Login() -> Element {
 
                             match res_logout {
                                 Ok(msg_logout) => {
-                                    // modify state variables.
+                                    // In case of success, modify state variables.
                                     response_msg.set(format!("{}", msg_logout));
                                     *signed_in.write() = false;
 
@@ -254,6 +271,8 @@ fn Login() -> Element {
                                     cleartext_pwd.set(String::new());
 
                                     *pagewize_conn_id.write() = 0;
+
+                                    user_list_levels.set(Vec::new());
                                 },
                                 Err(e) => {
                                     response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
@@ -270,7 +289,54 @@ fn Login() -> Element {
             div {"Logged-in game will appear after logging in."}
         } else { // TOADD
             div {"Logged-in game coming soon."}
-        }
+
+            div {
+                button {
+                    class : "btn-primary",
+                    onclick : move |_| async move {
+                        open_list_levels.set(true);
+                    },
+                    "New game"
+                } // end of button
+            } // end of div
+
+            if open_list_levels() {
+                div {
+                    "Available levels"
+                }
+
+                div { // Attempt for an array of buttons to open individual levels, becomes problematic...
+                    /*
+                    for level in user_list_levels().iter() {
+                        div {
+                            button {
+                                class : "btn-primary",
+                                onclick : move |_| async move {
+                                    // will start a new game
+                                },
+                                level.disp() // expected identifier (?!)
+                            } // end of button for an individual lvl
+                        } // end of div
+                    } // enf for loop over levels in the list
+                    */
+                    /*
+                    for (num,level) in user_list_levels().iter().enumerate() {
+                        div {
+                            button {
+                                class : "btn-primary",
+                                onclick : move |_| async move {
+                                    // will start a new game
+                                },
+                                //level.disp() // expected identifier (?!)
+                                format!("Level{}", num)  // expected identifier (?!)
+                            } // end of button for an individual lvl
+                        } // end of div
+                    } // enf for loop over levels in the list
+                    */
+                } // end of div with the list of buttons
+            }
+
+        } // end of else -> Logged-in game
 
     } // end of rsx!
 } // end of component
