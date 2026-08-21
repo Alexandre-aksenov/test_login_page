@@ -166,7 +166,7 @@ fn Login() -> Element {
     }
 
     rsx! {
-        fieldset { // gray rectangle. Seems to have no effect...
+        fieldset { // gray rectangle. Its effect is specified in CSS.
             legend { "Account" }
 
             div {
@@ -258,7 +258,11 @@ fn Login() -> Element {
             } // end of div
         } // end of fieldset
 
-        div {"logged-in game will appear here"}
+        if *signed_in.read() == false {
+            div {"Logged-in game will appear after logging in."}
+        } else {
+            div {"Logged-in game coming soon."}
+        }
 
     } // end of rsx!
 } // end of component
