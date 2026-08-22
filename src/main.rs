@@ -286,13 +286,11 @@ fn Login() -> Element {
                     str_levels.set(String::from("Calling the list_levels() fn"));
 
                     user_list_levels.set(
-                        list_levels("test_user2".to_string())
+                        list_levels(user_login.read().to_string())
                         .await
                         .unwrap_or(Vec::new())
                     );
-                    // -> user_login.read
 
-                    // str_levels.set(display_concat_levels(&*user_list_levels.read()));
                     str_levels.set(display_concat_levels_par(&*user_list_levels.read()));
                     // display_concat_levels_par
 
