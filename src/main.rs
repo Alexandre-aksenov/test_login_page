@@ -168,6 +168,11 @@ fn Login() -> Element {
     let mut response_msg: Signal<String> = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
 
+    // For the signed-in game
+    let mut user_list_levels: Signal<Vec<LevelInfo>> = use_signal(|| Vec::new());
+    let mut str_levels: Signal<String> = use_signal(|| String::from("DB response will go here "));
+
+
     // initialization depending on whether the user is signed in
     if *signed_in.read() {
         button_text.set(String::from("Sign out"));
@@ -274,14 +279,36 @@ fn Login() -> Element {
             div {"Logged-in game will appear after logging in."}
         } else {
             div {"Logged-in game coming soon."}
-        }
+
+            button {
+                class : "btn-primary",
+                onclick : move |_| async move {
+                    str_levels.set(String::from("Calling the list_levels() fn"));
+
+                    user_list_levels.set(
+                        list_levels("test_user2".to_string())
+                        .await
+                        .unwrap_or(Vec::new())
+                    );
+                    // -> user_login.read
+
+                    // str_levels.set(display_concat_levels(&*user_list_levels.read()));
+                    str_levels.set(display_concat_levels_par(&*user_list_levels.read()));
+                    // display_concat_levels_par
+
+                }, // end of onclick action.
+                "New game"
+            } // end of button
+
+            div {dangerous_inner_html: "{str_levels.read()}"}
+        } // end of if Signed in
 
     } // end of rsx!
 } // end of component
 
 /*
 #[component]
-fn Game() -> Element {
+fn SignedInGame() -> Element {
     rsx! {
         div { "logged-in game" }
     }
