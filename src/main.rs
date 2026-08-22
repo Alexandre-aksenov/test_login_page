@@ -4,6 +4,7 @@ use dioxus_sdk_storage::use_persistent; // for persistent storage of login info
 use sha3_rust::sha3_256; // for hashing the pwd in the DX client (frontend)
 use hex;
 
+use itertools::join;
 
 #[cfg(feature = "server")]
 use axum::extract::Query;
@@ -15,7 +16,18 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 const HEADER_SVG: Asset = asset!("/assets/header.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
-// shareable!(Numbers: List<usize> = [3, 5, 7].into_iter().collect());
+#[derive(serde::Serialize, serde::Deserialize, Debug)] // , Clone
+struct LevelInfo{
+    level_id: i16,
+    full_fen: String,
+    goal: String,
+    won: bool,
+}
+
+/// Concatenates levels, surrounding each of them with an HTML paragraph tag
+fn display_concat_levels_par(lvls: &[LevelInfo]) -> String {
+    join(lvls.iter().map(|lvl| format!("<p>{:?}</p>", lvl)), "\n")
+}
 
 
 // https://dioxuslabs.com/learn/0.7/essentials/router/#creating-a-routable-enum
@@ -430,6 +442,75 @@ async fn logout(
         Ok(reply) => Ok(reply),
         Err(e) => Err(e),
     }
-
 }
 
+
+/// Read the level list from DB.
+/// Middleware fn to list levels and player's progress.
+#[server()]
+async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError>
+{
+    use tokio_postgres::NoTls;
+
+    // deserialization. tokio_postgres has been imported above
+    fn deserialize_row_to_level(row: &tokio_postgres::Row) -> LevelInfo {
+        // crate::LevelInfo {
+        LevelInfo {
+            level_id: row.get("level_id"), // i16
+            full_fen: row.get("full_fen"), // String
+            goal: row.get("goal"), // String
+            won: row.get("won"), // bool
+        }
+    }
+
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+
+    let reply = match res_client {
+        Ok((mut client, connection)) => {
+
+            // Spawn 'connection'.
+            tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
+
+            let query_levels = format!("select * from list_levels(u_login => '{}');", &user_login);
+            let res_table_lvls = client.query(query_levels.as_str(), &[]).await;
+
+            // process the answer of DB
+            match res_table_lvls {
+                Ok(vec_row_levels) => {
+                    // debug
+                    // println!("{} rows", vec_row_levels.len()); // 3, OK
+                    // println!("Columns: {:?}", vec_row_levels[0].columns()); // 4 correct col names, types
+
+                    let vec_lvls:Vec<LevelInfo> = vec_row_levels
+                        .iter()
+                        .map(|row| deserialize_row_to_level(row))
+                        .collect();
+
+                    Ok(vec_lvls)
+                },
+                Err(e) => { Err(ServerFnError::Request(
+                    dioxus_fullstack::RequestError::Body(format!("Failed to get list of levels: {}", e))
+                ))
+                },
+            }
+        }, // end of OK block if the client could connect to Database
+        Err(e) => {
+            eprintln!("Failed to connect to database: {}", e);
+
+            Err(ServerFnError::Request(
+                dioxus_fullstack::RequestError::Request(
+                    format!("Failed to connect to database while attempting to get list of levels: {}", e)
+                )
+            ))
+        }
+    };
+
+    match reply {
+        Ok(reply) => Ok(reply),
+        Err(e) => Err(e),
+    }
+}

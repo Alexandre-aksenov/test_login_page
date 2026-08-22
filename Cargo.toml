@@ -23,6 +23,11 @@ tokio-postgres = { version = "0.7.13", optional = true }
 sha3-rust = "0.1.1"
 hex = "0.4.3"
 
+# For quering data from DB:
+serde = { version = "1.0.229", features = ["derive"] }
+
+# For showing the res as a long string
+itertools = "0.15.0"
 
 # For storing login info so that it persists page reload:
 dioxus-sdk-storage = "0.7.0"
