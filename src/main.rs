@@ -313,31 +313,24 @@ fn Login() -> Element {
 
             div {dangerous_inner_html: "{str_levels.read()}"}
 
-            // div {"Can start: {next_level.read()}"} // Display is not supported for Option<i16>
-            /*
-            match next_level.read() {
-                None => div {message: "No more levels to play"},
-                Some(n) => div {message: "Can start: {n}"},
-            }
-            */
-
             if (next_level.read().is_none()) {
                 div {"No more levels (you've solved the game or should click New Game to see options)"}
-            } // else TO-ADD
+            }
             else {
                 div {"Can start level {next_level.read().unwrap()}"}
+
+                button { // "Start next level"
+                    class : "btn-primary",
+                    onclick : move |_| async move { // to-ADAPT
+                        str_levels.set(String::from("Starting the level..."));
+
+                        current_level.set(*next_level.read());
+                    }, // end of onclick action.
+                    "Start next level"
+                } // end of button
+
+
             }
-
-            button { // "Start next level"
-                class : "btn-primary",
-                onclick : move |_| async move { // to-ADAPT
-                    str_levels.set(String::from("Starting the level..."));
-
-                    current_level.set(*next_level.read());
-                }, // end of onclick action.
-                "Start next level"
-            } // end of button
-
 
 
 
