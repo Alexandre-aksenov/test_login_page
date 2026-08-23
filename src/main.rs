@@ -322,29 +322,25 @@ fn Login() -> Element {
             */
 
             if (next_level.read().is_none()) {
-                div {"No more levels to play"}
+                div {"No more levels (you've solved the game or should click New Game to see options)"}
             } // else TO-ADD
-
+            else {
+                div {"Can start level {next_level.read().unwrap()}"}
+            }
 
             button { // "Start next level"
                 class : "btn-primary",
                 onclick : move |_| async move { // to-ADAPT
                     str_levels.set(String::from("Starting the level..."));
 
-                    // query the list of levels for the user
-                    /*
-                    user_list_levels.set(
-                        list_levels(user_login.read().to_string())
-                        .await
-                        .unwrap_or(Vec::new())
-                    );
-                    */
-
                     current_level.set(*next_level.read());
-
                 }, // end of onclick action.
                 "Start next level"
             } // end of button
+
+
+
+
         } // end of if Signed in
 
     } // end of rsx!
