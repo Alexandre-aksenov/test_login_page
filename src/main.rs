@@ -29,6 +29,15 @@ fn display_concat_levels_par(lvls: &[LevelInfo]) -> String {
     join(lvls.iter().map(|lvl| format!("<p>{:?}</p>", lvl)), "\n")
 }
 
+/// The next level to play, if any.
+fn next_unsolved_level(lvls: &[LevelInfo]) -> Option<i16> {
+    lvls
+        .iter()
+        .find(|lvl| !lvl.won)
+        .map(|lvl| lvl.level_id)
+}
+
+
 
 // https://dioxuslabs.com/learn/0.7/essentials/router/#creating-a-routable-enum
 #[derive(Routable, Clone, PartialEq)] // manual suggests adding the Debug trait
@@ -171,6 +180,8 @@ fn Login() -> Element {
     // For the signed-in game
     let mut user_list_levels: Signal<Vec<LevelInfo>> = use_signal(|| Vec::new());
     let mut str_levels: Signal<String> = use_signal(|| String::from("DB response will go here "));
+    let mut next_level: Signal<Option<i16>> = use_signal(|| None);
+    let mut current_level: Signal<Option<i16>> = use_signal(|| None);
 
 
     // initialization depending on whether the user is signed in
@@ -275,16 +286,19 @@ fn Login() -> Element {
             } // end of div
         } // end of fieldset
 
+
+        // USEFUL content: the mini-game
         if *signed_in.read() == false {
             div {"Logged-in game will appear after logging in."}
         } else {
             div {"Logged-in game coming soon."}
 
-            button {
+            button { // "New game"
                 class : "btn-primary",
                 onclick : move |_| async move {
                     str_levels.set(String::from("Calling the list_levels() fn"));
 
+                    // query the list of levels for the user
                     user_list_levels.set(
                         list_levels(user_login.read().to_string())
                         .await
@@ -292,13 +306,45 @@ fn Login() -> Element {
                     );
 
                     str_levels.set(display_concat_levels_par(&*user_list_levels.read()));
-                    // display_concat_levels_par
-
+                    next_level.set(next_unsolved_level(&*user_list_levels.read())); // takes 0 args?
                 }, // end of onclick action.
                 "New game"
             } // end of button
 
             div {dangerous_inner_html: "{str_levels.read()}"}
+
+            // div {"Can start: {next_level.read()}"} // Display is not supported for Option<i16>
+            /*
+            match next_level.read() {
+                None => div {message: "No more levels to play"},
+                Some(n) => div {message: "Can start: {n}"},
+            }
+            */
+
+            if (next_level.read().is_none()) {
+                div {"No more levels to play"}
+            } // else TO-ADD
+
+
+            button { // "Start next level"
+                class : "btn-primary",
+                onclick : move |_| async move { // to-ADAPT
+                    str_levels.set(String::from("Starting the level..."));
+
+                    // query the list of levels for the user
+                    /*
+                    user_list_levels.set(
+                        list_levels(user_login.read().to_string())
+                        .await
+                        .unwrap_or(Vec::new())
+                    );
+                    */
+
+                    current_level.set(*next_level.read());
+
+                }, // end of onclick action.
+                "Start next level"
+            } // end of button
         } // end of if Signed in
 
     } // end of rsx!
