@@ -329,8 +329,16 @@ fn Login() -> Element {
                     "Start next level"
                 } // end of button
 
+                // The mini-game itself
+                if (current_level.read().is_none()) {
+                    div {"The mini-game will appear here"}
+                }
+                else {
+                    div {"Started level {current_level.read().unwrap()}"}
+                    // TOADD the mini-game here
+                }
 
-            }
+            } // end of: if next_level is not none
 
 
 
