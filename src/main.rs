@@ -309,7 +309,7 @@ fn Login() -> Element {
 
                     // query the list of levels for the user
                     user_list_levels.set(
-                        list_levels(user_login.read().to_string())
+                        list_levels_uid(*user_id.read())
                         .await
                         .unwrap_or(Vec::new())
                     );
@@ -580,6 +580,7 @@ async fn logout(
 }
 
 
+/*
 /// Read the level list from DB.
 /// Middleware fn to list levels and player's progress.
 #[server()]
@@ -649,6 +650,7 @@ async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError
         Err(e) => Err(e),
     }
 }
+*/
 
 /// Read the level list from DB.
 /// Middleware fn to list levels and player's progress using his id.
