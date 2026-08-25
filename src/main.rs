@@ -649,3 +649,77 @@ async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError
         Err(e) => Err(e),
     }
 }
+
+/// Read the level list from DB.
+/// Middleware fn to list levels and player's progress using his id.
+#[server()]
+async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
+{
+    #[cfg(feature = "server")]
+    {
+        use tokio_postgres::NoTls;
+
+        // deserialization. tokio_postgres has been imported above
+        fn deserialize_row_to_level(row: &tokio_postgres::Row) -> LevelInfo {
+            // crate::LevelInfo {
+            LevelInfo {
+                level_id: row.get("level_id"), // i16
+                full_fen: row.get("full_fen"), // String
+                goal: row.get("goal"), // String
+                won: row.get("won"), // bool
+            }
+        }
+
+        let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+
+        let reply = match res_client {
+            Ok((mut client, connection)) => {
+
+                // Spawn 'connection'.
+                tokio::spawn(async move {
+                    if let Err(e) = connection.await {
+                        eprintln!("connection error: {}", e);
+                    }
+                });
+
+                let query_levels = format!("select * from list_levels_user_id(u_id => {});", user_id);
+                let res_table_lvls = client.query(query_levels.as_str(), &[]).await;
+
+                // process the answer of DB
+                match res_table_lvls {
+                    Ok(vec_row_levels) => {
+
+                        let vec_lvls:Vec<LevelInfo> = vec_row_levels
+                            .iter()
+                            .map(|row| deserialize_row_to_level(row))
+                            .collect();
+
+                        Ok(vec_lvls)
+                    },
+                    Err(e) => { Err(ServerFnError::Request(
+                        dioxus_fullstack::RequestError::Body(format!("Failed to get list of levels: {}", e))
+                    ))
+                    },
+                }
+            }, // end of OK block if the client could connect to Database
+            Err(e) => {
+                eprintln!("Failed to connect to database: {}", e);
+
+                Err(ServerFnError::Request(
+                    dioxus_fullstack::RequestError::Request(
+                        format!("Failed to connect to database while attempting to get list of levels: {}", e)
+                    )
+                ))
+            }
+        };
+
+        match reply {
+            Ok(reply) => Ok(reply),
+            Err(e) => Err(e),
+        }
+    }
+    #[cfg(not(feature = "server"))]
+    {
+        Err(ServerFnError::new("Server logic not available on client"))
+    }
+}
