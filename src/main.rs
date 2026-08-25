@@ -471,6 +471,64 @@ async fn login(
 }
 
 
+/// Login fn, which also returns user_id to frontend. TOADAPT
+/// Returns:
+/// new_user_id > 0 if connection to DB is successful.
+///                   = 0 otherwize
+/// new connection_id > 0 if connection to DB is successful.
+///  -1 should be returned if error on connection to DB.
+///  -2 should be returned if the row does not contain "new_connection_id"
+///    (should not happen, according to the signature of the DB procedure).
+///  -3 if login is rejected by DB (because the user does not exist or the password is wrong).
+#[server()]
+async fn login_user_connection_id(
+    user_login: String, // if &str -> error[E0521]: borrowed data escapes outside of function
+    hash_pwd: String
+) -> Result<(i32, i32), ServerFnError> // <- dioxus::prelude::ServerFnError
+{
+    use tokio_postgres::NoTls;
+
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+
+    let (user_id, connection_id) = match res_client {
+        Ok((mut client, connection)) => {
+
+            // Spawn 'connection'.
+            tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
+
+
+            let query_login = format!("call sign_in_user_id(login => '{}', pwd => '{}');", &user_login, &hash_pwd);
+            let res_login = client.query_one(&query_login, &[]).await;
+
+            let mut new_connection_id: i32 = 0;
+            let mut new_user_id: i32 = 0;
+
+            match res_login {
+                Ok(row) => {
+                    new_connection_id = row.try_get("new_connection_id").unwrap_or(-2);
+                    new_user_id = row.try_get("user_id").unwrap_or(0);
+                }
+                Err(e) => {
+                    eprintln!("Login failed : {}", e);
+                    new_connection_id = -3;
+                }
+            }
+
+            (new_user_id, new_connection_id)
+        }
+        Err(e) => {
+            eprintln!("Failed to connect to database: {}", e);
+            (0, -1)
+        }};
+
+    Ok((user_id, connection_id))
+}
+
+
 /// <- ../login_proc_db_v2/src/main.rs
 #[server()]
 async fn logout(
