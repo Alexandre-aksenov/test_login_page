@@ -170,7 +170,9 @@ fn Login() -> Element {
 
     let mut user_login = use_persistent("user_login", || String::new());
     let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
+    let mut user_id = use_persistent("user_id", || 3); // new in this version
 
+    // Useful during login
     let mut candidate_user_login = use_signal(|| String::new());
     let mut cleartext_pwd = use_signal(|| String::new());
 
