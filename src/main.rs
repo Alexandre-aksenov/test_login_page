@@ -6,6 +6,9 @@ use hex;
 
 use itertools::join;
 
+// For the minigame
+use test_login_page::{solution_lvl1, to_json};
+
 #[cfg(feature = "server")]
 use axum::extract::Query;
 
