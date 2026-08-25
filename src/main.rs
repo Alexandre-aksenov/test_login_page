@@ -170,7 +170,8 @@ fn Login() -> Element {
 
     let mut user_login = use_persistent("user_login", || String::new());
     let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
-    let mut user_id = use_persistent("user_id", || 3); // new in this version
+    let mut user_id = use_persistent("user_id", || 3);
+    // new in this version, 0 should stand for no active connection.
 
     // Useful during login
     let mut candidate_user_login = use_signal(|| String::new());
@@ -236,26 +237,28 @@ fn Login() -> Element {
                     onclick : move |_| async move {
                         if *signed_in.read() == false {
                             // Sign-in user
-                            // Calls the middleware fn 'login'
+                            // Calls the middleware fn 'login' -> 'login_user_connection_id'
 
                             let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
-                            let res_response = login(candidate_user_login(), hashed_pwd).await;
+                            // let res_response = login(candidate_user_login(), hashed_pwd).await;
+                            let res_response = login_user_connection_id(candidate_user_login(), hashed_pwd).await;
 
-                            let response = res_response.unwrap_or(-4); // -4 means: DX server did not reply
+                            let response = res_response.unwrap_or((0, -4)); // -4 means: DX server did not reply
 
-                            let response_text = match (response > 0) {
+                            let response_text = match (response.1 > 0) {
                                 true => {// In case of success, update state variables:
-                                    *pagewize_conn_id.write() = response;
+                                    *pagewize_conn_id.write() = response.1;
                                     *signed_in.write() = true; // The button changes to "Sign out"
                                     *user_login.write() = candidate_user_login.read().clone();
+                                    *user_id.write() = response.0;
 
                                     // clear candidate login (local var to this session).
                                     candidate_user_login.set(String::new());
 
-                                    format!("Login successful, connection id {}", response)
+                                    format!("Login successful, connection id {}", response.1)
                                 },
-                                false => format!("Login failed, code {}", response),
+                                false => format!("Login failed, code {}", response.1),
                             };
 
                             response_msg.set(response_text);
@@ -276,6 +279,7 @@ fn Login() -> Element {
                                     cleartext_pwd.set(String::new());
 
                                     *pagewize_conn_id.write() = 0;
+                                    *user_id.write() = 0;
                                 },
                                 Err(e) => {
                                     response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
@@ -418,12 +422,13 @@ async fn register(
 }
 
 
-/// Returns:
-/// new connection_id > 0 if connection to DB is successful.
-///  -1 should be returned if error on connection to DB.
-///  -2 should be returned if the row does not contain "new_connection_id"
-///    (should not happen according to the signature of the DB procedure).
-///  -3 if login is rejected by DB (because the user does not exist or the password is wrong).
+// Returns:
+// new connection_id > 0 if connection to DB is successful.
+//  -1 should be returned if error on connection to DB.
+//  -2 should be returned if the row does not contain "new_connection_id"
+//    (should not happen according to the signature of the DB procedure).
+//  -3 if login is rejected by DB (because the user does not exist or the password is wrong).
+/*
 #[server()]
 async fn login(
     user_login: String, // if &str -> error[E0521]: borrowed data escapes outside of function
@@ -469,9 +474,9 @@ async fn login(
 
     Ok(connection_id)
 }
+*/
 
-
-/// Login fn, which also returns user_id to frontend. TOADAPT
+/// Login fn, which also returns user_id to the frontend.
 /// Returns:
 /// new_user_id > 0 if connection to DB is successful.
 ///                   = 0 otherwize
@@ -499,7 +504,6 @@ async fn login_user_connection_id(
                     eprintln!("connection error: {}", e);
                 }
             });
-
 
             let query_login = format!("call sign_in_user_id(login => '{}', pwd => '{}');", &user_login, &hash_pwd);
             let res_login = client.query_one(&query_login, &[]).await;
