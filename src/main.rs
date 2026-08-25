@@ -189,6 +189,15 @@ fn Login() -> Element {
     let mut next_level: Signal<Option<i16>> = use_signal(|| None);
     let mut current_level: Signal<Option<i16>> = use_signal(|| None);
 
+    // new in commit of 25/8/2026, 18:40
+    let mut num_correct_moves: Signal<u16> = use_signal(|| 0);
+
+    let mut player_move1: Signal<String> = use_signal(|| String::from(""));
+    let mut player_move2: Signal<String> = use_signal(|| String::from(""));
+    let mut player_move3: Signal<String> = use_signal(|| String::from(""));
+
+    let mut last_saveid: Signal<i32> = use_signal(|| 0);
+    let correct_sol = use_signal(|| solution_lvl1());
 
     // initialization depending on whether the user is signed in
     if *signed_in.read() {
@@ -345,6 +354,89 @@ fn Login() -> Element {
                 else {
                     div {"Started level {current_level.read().unwrap()}"}
                     // TOADD the mini-game here
+
+                                    div {
+                    input {
+                        type : "text",
+                        placeholder: "1st move",
+                        oninput: move |event| {
+                            player_move1.set(event.value());
+                        },
+                    }
+                }
+
+                if *player_move1.read() == // correct_sol[0].player.to_string() {
+                    (correct_sol.read())[0].player.to_string() {
+                    // Update num_correct_moves, (a possible adjustment of interface: disable input above)
+
+                    button { // "Correct!"
+                        class : "btn-primary",
+                        onclick : move |_| async move {
+                            *num_correct_moves.write() = 1;
+
+                        }, // end of onclick action.
+                        "Correct!"
+                    } // end of button
+                }
+                else {
+                    div {"Incorrect."}
+                }
+
+                // Show opponent's reply
+                if *num_correct_moves.read() >= 1 {
+                    // div {"Opponent's reply: {correct_sol[0].opponent.to_string()}"}
+                        div {"Opponent's reply: {(correct_sol.read())[0].opponent.to_string()}"}
+                }
+
+                // 2nd move will be shown after the first move is correct.
+                /*
+                if *num_correct_moves.read() >= 1 {
+                    div {"2nd move:"}
+                } */
+
+                // Button to save progress
+                if *num_correct_moves.read() >= 1 {
+                    button { // "Save"
+                        class : "btn-primary",
+                        onclick : move |_| async move {
+                                // Call middleware fn save_game
+                                // fn to_json(&[UCIstr]) -> String ,  in lib.rs
+
+                                /*
+                                save_game(*user_login.read(),
+                                current_level.read().expect("level could not be read"),
+                                to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]));
+                                // ->
+                                error[E0507]: cannot move out of dereference of `GenerationalRef<Ref<'_, std::string::String>>`
+                                move occurs because value has type `std::string::String`, which does not implement the `Copy` trait
+                                */
+                                /*
+                                save_game(String::from(*user_login.read().clone()),
+                                current_level.read().expect("level could not be read"),
+                                to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]));
+                                // ->
+                                // error[E0277]: the size for values of type `str` cannot be known at compilation time
+                                */
+                                let res_last_saveid = save_game_uid(*user_id.read(),
+                                current_level.read().expect("level could not be read"),
+                                to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
+                                .await;
+
+                                match res_last_saveid {
+                                    Ok(saveid) => {
+                                        *last_saveid.write() = saveid;
+                                    },
+                                    Err(_) => {
+                                        *last_saveid.write() = -1;
+                                    }
+                                }
+                        }, // end of onclick action.
+                        "Save progress"
+                    } // end of button
+
+                    // Show save_id
+                }
+
                 }
 
             } // end of: if next_level is not none
@@ -718,6 +810,66 @@ async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
         match reply {
             Ok(reply) => Ok(reply),
             Err(e) => Err(e),
+        }
+    }
+    #[cfg(not(feature = "server"))]
+    {
+        Err(ServerFnError::new("Server logic not available on client"))
+    }
+}
+
+
+#[server()]
+async fn save_game_uid(
+    user_id: i32,
+    level_id : i16,
+    moves : String) -> Result<i32, ServerFnError>
+{
+    #[cfg(feature = "server")]
+    {
+        use tokio_postgres::NoTls; // unresolved import `tokio_postgres` before adding the line #[cfg(feature = "server")] (?!)
+
+        let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+
+        match res_client {
+            Ok((mut client, connection)) => {
+                //      spawn connection
+                tokio::spawn(async move {
+                    if let Err(e) = connection.await {
+                        eprintln!("connection error: {}", e);
+                    }
+                });
+
+                //      query
+                let query_save = format!("call save_game_user_id(user_id => {}, level_id => {}::smallint, moves => '{}'::JSONB);", user_id, &level_id, &moves);
+                let res_save = client.query_one(&query_save, &[]).await;
+
+                //      process answer
+                let mut new_save_id = 0;
+
+                /*
+                if let Ok(row) = res_save {
+                    new_save_id = row.get(0);
+                }
+                */
+                match res_save {
+                    Ok(row) => { new_save_id = row.try_get(0).unwrap_or(-2); },
+                    Err(e) => { eprintln!("Failed to call save_game procedure: {}", e);
+                        new_save_id = -3;},
+                }
+
+
+                // default return value
+                Ok(new_save_id)
+            },
+            Err(e) => {
+                eprintln!("Failed to connect to database: {}", e);
+                Err(ServerFnError::Request(
+                    dioxus_fullstack::RequestError::Request(
+                        format!("Failed to connect to database while attempting to save game: {}", e)
+                    )
+                ))
+            }
         }
     }
     #[cfg(not(feature = "server"))]
