@@ -446,8 +446,9 @@ pub fn Home() -> Element {
 
 
 
-// Middleware-side code.
+// Middleware-side code. 
 /// Register a new user in DB. The password has already been hashed in the browser.
+/// Calls the DB procdure 'signup'.
 /// Adds a row to the table 'users'.
 #[server()]
 async fn register(
