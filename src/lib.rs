@@ -58,6 +58,7 @@ pub fn to_json(arr_full_moves : &[FullMove]) -> String
     format!("[{}]", comma_sep_str)
 }
 
+/// Defines the correct solution for level 1.
 pub fn solution_lvl1() -> [FullMove; 3]
 {
     [
@@ -79,7 +80,7 @@ fn test_FullMove_to_json() {
 
 #[test]
 fn test_arr_to_json() {
-    let arr_full_moves = &solution_lvl1()[..2] ;
+    let arr_full_moves = &solution_lvl1()[..2] ; // example: 2 correct moves
     let json_str = to_json(arr_full_moves);
     println!("JSON string for array: {}", json_str);
     // [{"player": "c6c7", "opponent": "d5d6"},{"player": "b6b5", "opponent": "d6d5"}]

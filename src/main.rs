@@ -19,7 +19,7 @@ const MAIN_CSS: Asset = asset!("/assets/main.css");
 const HEADER_SVG: Asset = asset!("/assets/header.svg");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)] // , Clone
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct LevelInfo{
     level_id: i16,
     full_fen: String,
@@ -41,8 +41,8 @@ fn next_unsolved_level(lvls: &[LevelInfo]) -> Option<i16> {
 }
 
 
-
-// https://dioxuslabs.com/learn/0.7/essentials/router/#creating-a-routable-enum
+/// Describes the list of pages
+/// https://dioxuslabs.com/learn/0.7/essentials/router/#creating-a-routable-enum
 #[derive(Routable, Clone, PartialEq)] // manual suggests adding the Debug trait
 enum Route {
     #[route("/")]
@@ -53,17 +53,14 @@ enum Route {
     Login {},
     #[route("/signup")]
     Signup {},
-    // #[route("/signed_in_game")]
-    // Game {},
 }
 
 /// Main fn for the frontend.
-/// -> status 404 in browser
-// #[cfg(not(feature = "server"))]
 fn main() {
     dioxus::launch(App);
 }
 
+/// Styling.
 #[component]
 fn App() -> Element {
     rsx! {
@@ -74,6 +71,7 @@ fn App() -> Element {
     }
 }
 
+/// Page for the trial game.
 #[component]
 fn Trial() -> Element {
     rsx! {
@@ -81,6 +79,7 @@ fn Trial() -> Element {
     }
 }
 
+/// Signup page.
 #[component]
 fn Signup() -> Element {
     let mut candidate_user_login = use_signal(|| String::new());
@@ -399,24 +398,7 @@ fn Login() -> Element {
                     button { // "Save"
                         class : "btn-primary",
                         onclick : move |_| async move {
-                                // Call middleware fn save_game
-                                // fn to_json(&[UCIstr]) -> String ,  in lib.rs
 
-                                /*
-                                save_game(*user_login.read(),
-                                current_level.read().expect("level could not be read"),
-                                to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]));
-                                // ->
-                                error[E0507]: cannot move out of dereference of `GenerationalRef<Ref<'_, std::string::String>>`
-                                move occurs because value has type `std::string::String`, which does not implement the `Copy` trait
-                                */
-                                /*
-                                save_game(String::from(*user_login.read().clone()),
-                                current_level.read().expect("level could not be read"),
-                                to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]));
-                                // ->
-                                // error[E0277]: the size for values of type `str` cannot be known at compilation time
-                                */
                                 let res_last_saveid = save_game_uid(*user_id.read(),
                                 current_level.read().expect("level could not be read"),
                                 to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
@@ -441,21 +423,11 @@ fn Login() -> Element {
 
             } // end of: if next_level is not none
 
-
-
-        } // end of if Signed in
+        } // end of: if Signed in
 
     } // end of rsx!
 } // end of component
 
-/*
-#[component]
-fn SignedInGame() -> Element {
-    rsx! {
-        div { "logged-in game" }
-    }
-}
-*/
 
 #[component]
 pub fn Home() -> Element {
@@ -476,6 +448,7 @@ pub fn Home() -> Element {
 
 // Middleware-side code.
 /// Register a new user in DB. The password has already been hashed in the browser.
+/// Adds a row to the table 'users'.
 #[server()]
 async fn register(
     login: String,
@@ -517,61 +490,7 @@ async fn register(
 }
 
 
-// Returns:
-// new connection_id > 0 if connection to DB is successful.
-//  -1 should be returned if error on connection to DB.
-//  -2 should be returned if the row does not contain "new_connection_id"
-//    (should not happen according to the signature of the DB procedure).
-//  -3 if login is rejected by DB (because the user does not exist or the password is wrong).
-/*
-#[server()]
-async fn login(
-    user_login: String, // if &str -> error[E0521]: borrowed data escapes outside of function
-    hash_pwd: String
-) -> Result<i32, ServerFnError> // <- dioxus::prelude::ServerFnError
-{
-    use tokio_postgres::NoTls;
-
-    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
-
-    let connection_id = match res_client {
-        Ok((mut client, connection)) => {
-
-            // Spawn 'connection'.
-            tokio::spawn(async move {
-                if let Err(e) = connection.await {
-                    eprintln!("connection error: {}", e);
-                }
-            });
-
-
-            let query_login = format!("call sign_in(login => '{}', pwd => '{}');", &user_login, &hash_pwd);
-            let res_login = client.query_one(&query_login, &[]).await;
-
-            let mut new_connection_id: i32 = 0;
-
-            match res_login {
-                Ok(row) => {
-                    new_connection_id = row.try_get("new_connection_id").unwrap_or(-2);
-                }
-                Err(e) => {
-                    eprintln!("Login failed : {}", e);
-                    new_connection_id = -3;
-                }
-            }
-
-            new_connection_id
-        }
-        Err(e) => {
-            eprintln!("Failed to connect to database: {}", e);
-            -1
-        }};
-
-    Ok(connection_id)
-}
-*/
-
-/// Login fn, which also returns user_id to the frontend.
+/// Login fn. Calls the DB procedure 'sign_in_user_id'.
 /// Returns:
 /// new_user_id > 0 if connection to DB is successful.
 ///                   = 0 otherwize
@@ -580,6 +499,7 @@ async fn login(
 ///  -2 should be returned if the row does not contain "new_connection_id"
 ///    (should not happen, according to the signature of the DB procedure).
 ///  -3 if login is rejected by DB (because the user does not exist or the password is wrong).
+/// If login is successful, adds a row to the table 'connections'.
 #[server()]
 async fn login_user_connection_id(
     user_login: String, // if &str -> error[E0521]: borrowed data escapes outside of function
@@ -628,7 +548,8 @@ async fn login_user_connection_id(
 }
 
 
-/// <- ../login_proc_db_v2/src/main.rs
+/// Log out.  Calls the DB procedure 'logout'.
+/// Input: connection_id
 #[server()]
 async fn logout(
     connection_id: i32
@@ -672,80 +593,9 @@ async fn logout(
 }
 
 
-/*
-/// Read the level list from DB.
-/// Middleware fn to list levels and player's progress.
-#[server()]
-async fn list_levels(user_login: String) -> Result<Vec<LevelInfo>, ServerFnError>
-{
-    use tokio_postgres::NoTls;
-
-    // deserialization. tokio_postgres has been imported above
-    fn deserialize_row_to_level(row: &tokio_postgres::Row) -> LevelInfo {
-        // crate::LevelInfo {
-        LevelInfo {
-            level_id: row.get("level_id"), // i16
-            full_fen: row.get("full_fen"), // String
-            goal: row.get("goal"), // String
-            won: row.get("won"), // bool
-        }
-    }
-
-    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
-
-    let reply = match res_client {
-        Ok((mut client, connection)) => {
-
-            // Spawn 'connection'.
-            tokio::spawn(async move {
-                if let Err(e) = connection.await {
-                    eprintln!("connection error: {}", e);
-                }
-            });
-
-            let query_levels = format!("select * from list_levels(u_login => '{}');", &user_login);
-            let res_table_lvls = client.query(query_levels.as_str(), &[]).await;
-
-            // process the answer of DB
-            match res_table_lvls {
-                Ok(vec_row_levels) => {
-                    // debug
-                    // println!("{} rows", vec_row_levels.len()); // 3, OK
-                    // println!("Columns: {:?}", vec_row_levels[0].columns()); // 4 correct col names, types
-
-                    let vec_lvls:Vec<LevelInfo> = vec_row_levels
-                        .iter()
-                        .map(|row| deserialize_row_to_level(row))
-                        .collect();
-
-                    Ok(vec_lvls)
-                },
-                Err(e) => { Err(ServerFnError::Request(
-                    dioxus_fullstack::RequestError::Body(format!("Failed to get list of levels: {}", e))
-                ))
-                },
-            }
-        }, // end of OK block if the client could connect to Database
-        Err(e) => {
-            eprintln!("Failed to connect to database: {}", e);
-
-            Err(ServerFnError::Request(
-                dioxus_fullstack::RequestError::Request(
-                    format!("Failed to connect to database while attempting to get list of levels: {}", e)
-                )
-            ))
-        }
-    };
-
-    match reply {
-        Ok(reply) => Ok(reply),
-        Err(e) => Err(e),
-    }
-}
-*/
-
-/// Read the level list from DB.
-/// Middleware fn to list levels and player's progress using his id.
+/// Read the level list from DB. Calls the DB function 'list_levels_uid'.
+/// Input: user_id.
+/// Returns: vector of structs with info about each level (LevelInfo).
 #[server()]
 async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
 {
@@ -819,6 +669,15 @@ async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
 }
 
 
+/// Save the game.  Calls the DB procedure 'save_game_user_id'.
+/// Input: user_id,
+///     level_id,
+///     moves (JSON String about player's moves and replies).
+///         Currently (in the mini-game), only correct moves can be saved.
+///         This represents some extra information, which will be used in the full game
+///         (the player will be able to save his progress whether he is on the right path or not).
+/// Returns: save_id (to use for loading).
+/// Adds a row to the table 'saves'.
 #[server()]
 async fn save_game_uid(
     user_id: i32,
@@ -847,11 +706,6 @@ async fn save_game_uid(
                 //      process answer
                 let mut new_save_id = 0;
 
-                /*
-                if let Ok(row) = res_save {
-                    new_save_id = row.get(0);
-                }
-                */
                 match res_save {
                     Ok(row) => { new_save_id = row.try_get(0).unwrap_or(-2); },
                     Err(e) => { eprintln!("Failed to call save_game procedure: {}", e);
