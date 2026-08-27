@@ -448,7 +448,7 @@ pub fn Home() -> Element {
 
 // Middleware-side code. 
 /// Register a new user in DB. The password has already been hashed in the browser.
-/// Calls the DB procdure 'signup'.
+/// Calls the DB procedure 'signup'.
 /// Adds a row to the table 'users'.
 #[server()]
 async fn register(
@@ -460,7 +460,7 @@ async fn register(
     use tokio_postgres::NoTls;
 
     // establish a connection
-    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=game password=pwd_game dbname=mydatabase", NoTls).await;
 
     let reply = match res_client { // Result<String, ServerFnError>
         Ok((mut client, connection)) => {
