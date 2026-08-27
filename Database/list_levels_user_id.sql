@@ -22,8 +22,9 @@ returns table (
 	, goal VARCHAR(7)
 	, won bool
 )
-language plpgsql as
-$$
+language plpgsql 
+SECURITY definer -- makes the fn callable from the game, although it does not have the rights for individual SELECTs
+as $$
 DECLARE
 	level_user SMALLINT;
 BEGIN

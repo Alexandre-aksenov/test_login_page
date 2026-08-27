@@ -1,8 +1,7 @@
--- Procedure to sign up a player on the server.
+-- Proicedure to sign up a player on the server.
 -- Adds a row to the table 'users'.
--- Only client checks that the password meets the criteria len(login), len(pwd)>3 .
--- No checks on the DB server yet.
-
+-- No check (yet) that the password meets the criteria.
+-- In future, the password on the server will be the result of a hash (communicated by the client).
 
 DROP procedure IF exists signup;
 
@@ -11,6 +10,7 @@ create or replace procedure signup(
 	pwd VARCHAR(255)
 )
 language plpgsql
+SECURITY definer -- makes the proc callable from the game, although it does not have the rights for individual SELECT, INSERT
 as $$
 declare
 	login_exists boolean;

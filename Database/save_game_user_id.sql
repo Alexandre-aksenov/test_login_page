@@ -8,6 +8,7 @@ create or replace procedure save_game_user_id(
 	, inout new_save_id int  DEFAULT 0 -- used only as the output
 )
 language plpgsql
+SECURITY definer -- makes the proc callable from the game, although it does not have the rights for individual SELECT, INSERT
 AS $$
 declare
 	user_exists boolean; 

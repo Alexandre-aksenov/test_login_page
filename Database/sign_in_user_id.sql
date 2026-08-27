@@ -1,6 +1,6 @@
 -- Procedure to login, with 2 outputs:
 -- new_connection_id, user_id
-
+-- If it works, this procedure will replace 'sign_in'
 
 DROP procedure IF exists sign_in_user_id;
 
@@ -11,6 +11,7 @@ create or replace procedure sign_in_user_id(
 	, inout user_id int  DEFAULT 0 
 	)
 language plpgsql
+SECURITY definer -- makes the proc callable from the game, although it does not have the rights for individual SELECT, INSERT
 as $$
 declare
 	id_exists boolean;

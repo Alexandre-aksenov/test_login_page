@@ -1,6 +1,9 @@
 
+DROP procedure logout;
+
 create or replace procedure logout(session_id int)
 language plpgsql
+SECURITY definer -- makes the proc callable from the game, although it does not have the rights for individual SELECT, UPDATE
 as $$
 declare
 	sess record;
