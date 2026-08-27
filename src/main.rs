@@ -11,7 +11,6 @@ use test_login_page::{solution_lvl1, to_json};
 
 #[cfg(feature = "server")]
 use axum::extract::Query;
-use tokio_postgres::NoTls;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -614,8 +613,7 @@ async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
             }
         }
 
-        let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
-        //let res_client = tokio_postgres::connect("host=localhost port=5433 user=game password=pwd_game dbname=mydatabase", NoTls).await;
+        let res_client = tokio_postgres::connect("host=localhost port=5433 user=game password=pwd_game dbname=mydatabase", NoTls).await;
 
         let reply = match res_client {
             Ok((mut client, connection)) => {
