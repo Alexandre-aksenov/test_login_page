@@ -687,7 +687,8 @@ async fn save_game_uid(
     {
         use tokio_postgres::NoTls; // unresolved import `tokio_postgres` before adding the line #[cfg(feature = "server")] (?!)
 
-        let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+        // let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+        let res_client = tokio_postgres::connect("host=localhost port=5433 user=game password=pwd_game dbname=mydatabase", NoTls).await;
 
         match res_client {
             Ok((mut client, connection)) => {
