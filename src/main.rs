@@ -509,7 +509,7 @@ async fn login_user_connection_id(
 {
     use tokio_postgres::NoTls;
 
-    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=game password=pwd_game dbname=mydatabase", NoTls).await;
 
     let (user_id, connection_id) = match res_client {
         Ok((mut client, connection)) => {
