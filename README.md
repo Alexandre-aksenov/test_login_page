@@ -42,6 +42,16 @@ The global structure is described as three interacting components:
 
 * **Backend**: SQL-server (RDBMS: PostgreSQL 17), which should be initialized by the scripts in folder `Database` before starting the App, and is hosted locally at `http://localhost:5433`. It is responsible for keeping the information about users, connections, the users' progress.
 
+The tables are defined and initialized in `Database/create_tables.sql`. 
+The interfaces (functions and stored procedures) for use in the game are defined in scripts:
+* signup.sql,
+* sign_in_user_id.sql,
+* list_levels_user_id.sql,
+* save_game_user_id.sql,
+* logout.sql
+
+The game connects to the Database via its user `game` with restricted rights defined in `game_user.sql`.
+
 # Object of the mini-game.
 
 The mini-game is meant to be replaceable by a version of the game of chess endgames (implemented in pure frontend), available at: `https://endgame-wasm-minimal-holy-acorn-9027.fly.dev/`.
@@ -66,7 +76,6 @@ the following additions seem necessary:
 * Backend:
     * Periodic cleaning the old connections;
     * a more secure login procedure (hashing on both sides or Zero-Knowledge verification);
-    * analytic reports on recent connections (frequency, levels, number of attempts, technical features ...);
-    * users `admin` and `game` (with access to onlyDB procedures and functions) for enhanced security on DB side.
+    * analytic reports on recent connections (frequency, levels, number of attempts, technical features ...).
 
 
