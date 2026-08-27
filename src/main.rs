@@ -550,7 +550,7 @@ async fn login_user_connection_id(
 
 
 /// Log out.  Calls the DB procedure 'logout'.
-/// Input: connection_id
+/// Input: connection_id (i32) received from the login function
 #[server()]
 async fn logout(
     connection_id: i32
@@ -558,7 +558,7 @@ async fn logout(
 {
     use tokio_postgres::NoTls;
 
-    let res_client = tokio_postgres::connect("host=localhost port=5433 user=alex password=pwd dbname=mydatabase", NoTls).await;
+    let res_client = tokio_postgres::connect("host=localhost port=5433 user=game password=pwd_game dbname=mydatabase", NoTls).await;
 
     let reply = match res_client { // Result<String, ServerFnError> to send to the client
         Ok((mut client, connection)) => {
