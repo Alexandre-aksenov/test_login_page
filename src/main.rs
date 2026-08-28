@@ -521,6 +521,7 @@ async fn login_user_connection_id(
                 }
             });
 
+            // Query
             let res_login = client.query_one(
                 "call sign_in_user_id(login => $1::VARCHAR, pwd => $2::VARCHAR);", // statement
                 &[&user_login, &hash_pwd]) // params
@@ -630,8 +631,12 @@ async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
                     }
                 });
 
-                let query_levels = format!("select * from list_levels_user_id(u_id => {});", user_id);
-                let res_table_lvls = client.query(query_levels.as_str(), &[]).await;
+
+                let res_table_lvls = client.query(
+                "select * from list_levels_user_id(u_id => $1::INTEGER);", // statement
+                &[&user_id]) // params
+                .await; // Result<Vec<Row>, Error>
+
 
                 // process the answer of DB
                 match res_table_lvls {
