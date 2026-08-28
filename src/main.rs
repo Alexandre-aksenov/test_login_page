@@ -600,7 +600,7 @@ async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
 {
     #[cfg(feature = "server")]
     {
-        use tokio_postgres::NoTls; // unresolved module `tokio_postgres` (??!)
+        use tokio_postgres::NoTls;
 
         // deserialization. tokio_postgres has been imported above
         fn deserialize_row_to_level(row: &tokio_postgres::Row) -> LevelInfo {
@@ -685,7 +685,7 @@ async fn save_game_uid(
 {
     #[cfg(feature = "server")]
     {
-        use tokio_postgres::NoTls; // unresolved import `tokio_postgres` before adding the line #[cfg(feature = "server")] (?!)
+        use tokio_postgres::NoTls;
 
         let res_client = tokio_postgres::connect("host=localhost port=5433 user=game password=pwd_game dbname=mydatabase", NoTls).await;
 
