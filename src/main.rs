@@ -709,8 +709,12 @@ async fn save_game_uid(
                 });
 
                 //      query
-                let query_save = format!("call save_game_user_id(user_id => {}, level_id => {}::smallint, moves => '{}'::JSONB);", user_id, &level_id, &moves);
-                let res_save = client.query_one(&query_save, &[]).await;
+                let res_save = client.query_one(
+                    "call save_game_user_id(user_id => $1::INTEGER, level_id => $2::smallint, moves => $3::TEXT::JSONB);", // statement
+                    &[&user_id, &level_id, &moves]
+                    )
+                .await;
+
 
                 //      process answer
                 let mut new_save_id = 0;
