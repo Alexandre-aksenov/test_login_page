@@ -472,7 +472,7 @@ async fn register(
             // Query
             let res_signup  = client.execute(
                 "call signup(login => $1::VARCHAR, pwd => $2::VARCHAR)", // statement
-                &[&login, &hash_pwd])// params
+                &[&login, &hash_pwd]) // params
                 .await; // Result<u64, Error>
 
             // Process the result
@@ -521,8 +521,11 @@ async fn login_user_connection_id(
                 }
             });
 
-            let query_login = format!("call sign_in_user_id(login => '{}', pwd => '{}');", &user_login, &hash_pwd);
-            let res_login = client.query_one(&query_login, &[]).await;
+            let res_login = client.query_one(
+                "call sign_in_user_id(login => $1::VARCHAR, pwd => $2::VARCHAR);", // statement
+                &[&user_login, &hash_pwd]) // params
+                .await; // Result<Row, Error>
+
 
             let mut new_connection_id: i32 = 0;
             let mut new_user_id: i32 = 0;
