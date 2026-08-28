@@ -470,8 +470,10 @@ async fn register(
             });
 
             // Query
-            let query = format!("call signup(login => '{}', pwd => '{}')", login, hash_pwd);
-            let res_signup = client.execute(&query, &[]).await; // -> Should be: Result<u64, Error>
+            let res_signup  = client.execute(
+                "call signup(login => $1::VARCHAR, pwd => $2::VARCHAR)", // statement
+                &[&login, &hash_pwd])// params
+                .await; // Result<u64, Error>
 
             // Process the result
             match res_signup {
