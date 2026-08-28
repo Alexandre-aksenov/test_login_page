@@ -575,8 +575,10 @@ async fn logout(
                 }
             });
 
-            let query_logout = format!("call logout(session_id => {});", connection_id);
-            let res_logout = client.execute(&query_logout, &[]).await;
+            let res_logout = client.execute(
+                "call logout(session_id => $1);",
+                &[&connection_id])
+                .await; // Result<u64, Error>
 
             match res_logout {
                 Ok(_) => Ok(String::from("Logged out successfully.")),
