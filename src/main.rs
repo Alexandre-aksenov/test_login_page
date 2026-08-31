@@ -282,11 +282,12 @@ fn Login() -> Element {
                             // Sign out user
                             // Calls the server fn 'logout'.
 
-                            // let session_hash_arr = *session_hash.read().unwrap_or([0 as u8; 32]); // error: type [u8; 32] cannot be dereferenced
                             let session_hash_arr = match *session_hash.read() {
                                 Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
                                 None => [0 as u8; 32], // this case should not happen when signed in
-                            }; // RR warning: "Match can be replaced ..."
+                            }; // RR warning: "Match can be replaced ...", but the most intuitive attempt (comment below) fails.
+                            // let session_hash_arr = *session_hash.read().unwrap_or([0 as u8; 32]); // error: type [u8; 32] cannot be dereferenced
+
                             let res_logout = logout(*pagewize_conn_id.read(),
                                         *user_id.read(),
                                         hex::encode(&session_hash_arr))
@@ -329,15 +330,22 @@ fn Login() -> Element {
                 onclick : move |_| async move {
                     str_levels.set(String::from("Calling the list_levels() fn"));
 
+                    let session_hash_arr = match *session_hash.read() {
+                        Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
+                        None => [0 as u8; 32], // this case should not happen when signed in
+                    };
+
                     // query the list of levels for the user
                     user_list_levels.set(
-                        list_levels_uid(*user_id.read())
+                        list_levels_uid(*pagewize_conn_id.read(),
+                                        *user_id.read(),
+                                        hex::encode(&session_hash_arr)) // + 2arguments
                         .await
                         .unwrap_or(Vec::new())
                     );
 
                     str_levels.set(display_concat_levels_par(&*user_list_levels.read()));
-                    next_level.set(next_unsolved_level(&*user_list_levels.read())); // takes 0 args?
+                    next_level.set(next_unsolved_level(&*user_list_levels.read()));
                 }, // end of onclick action.
                 "New game"
             } // end of button
@@ -607,12 +615,6 @@ async fn logout(
                 }
             });
 
-            /*
-            let res_logout = client.execute(
-                "call logout(session_id => $1);",
-                &[&connection_id])
-                .await; // Result<u64, Error>
-            */
             let res_logout = client.execute(
                 "call logout(session_id => $1, user_id => $2, session_hash => $3::VARCHAR);",
                 &[&connection_id, &user_id, &session_hash_str])
@@ -639,10 +641,18 @@ async fn logout(
 
 
 /// Read the level list from DB. Calls the DB function 'list_levels_uid'.
-/// Input: user_id.
+/// Input:
+///     connection_id (i32),
+///     user_id (i32),
+///     session_hash_str (String) // decoded from Option([u8; 32]) on the frontend
+/// received from the login function.
 /// Returns: vector of structs with info about each level (LevelInfo).
 #[server()]
-async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
+async fn list_levels_uid(
+    connection_id: i32,
+    user_id: i32,
+    session_hash_str: String
+) -> Result<Vec<LevelInfo>, ServerFnError>
 {
     #[cfg(feature = "server")]
     {
@@ -673,8 +683,8 @@ async fn list_levels_uid(user_id: i32) -> Result<Vec<LevelInfo>, ServerFnError>
 
 
                 let res_table_lvls = client.query(
-                "select * from list_levels_user_id(u_id => $1::INTEGER);", // statement
-                &[&user_id]) // params
+                "select * from list_levels_user_id(session_id => $1, u_id => $2, session_hash => $3::VARCHAR);", // statement
+                &[&connection_id, &user_id, &session_hash_str]) // params
                 .await; // Result<Vec<Row>, Error>
 
 
