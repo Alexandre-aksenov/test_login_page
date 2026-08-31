@@ -339,7 +339,7 @@ fn Login() -> Element {
                     user_list_levels.set(
                         list_levels_uid(*pagewize_conn_id.read(),
                                         *user_id.read(),
-                                        hex::encode(&session_hash_arr)) // + 2arguments
+                                        hex::encode(&session_hash_arr))
                         .await
                         .unwrap_or(Vec::new())
                     );
@@ -420,28 +420,35 @@ fn Login() -> Element {
                     button { // "Save"
                         class : "btn-primary",
                         onclick : move |_| async move {
+                            let session_hash_arr = match *session_hash.read() {
+                                Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
+                                None => [0 as u8; 32], // this case should not happen when signed in
+                            };
 
-                                let res_last_saveid = save_game_uid(*user_id.read(),
-                                current_level.read().expect("level could not be read"),
-                                to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
-                                .await;
+                            let res_last_saveid = save_game_uid(
+                                    *pagewize_conn_id.read(),
+                                    *user_id.read(),
+                                    hex::encode(&session_hash_arr),
+                                    current_level.read().expect("level could not be read"),
+                                    to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
+                            .await;
 
-                                match res_last_saveid {
-                                    Ok(saveid) => {
-                                        *last_saveid.write() = saveid;
-                                    },
-                                    Err(_) => {
-                                        *last_saveid.write() = -1;
-                                    }
+                            match res_last_saveid {
+                                Ok(saveid) => {
+                                    *last_saveid.write() = saveid;
+                                },
+                                Err(_) => {
+                                    *last_saveid.write() = -1;
                                 }
+                            }
                         }, // end of onclick action.
                         "Save progress"
-                    } // end of button
+                    } // end of button to save progress
 
-                    // Show save_id
-                }
+                    // Show save_id , next feature
+                } // end of if num_correct_moves.read() >= 1
 
-                }
+                } // end of: if current_level.read() is not none
 
             } // end of: if next_level is not none
 
@@ -683,9 +690,8 @@ async fn list_levels_uid(
 
 
                 let res_table_lvls = client.query(
-                // "select * from list_levels_user_id(session_id => $1, u_id => $2, session_hash => $3::VARCHAR);", // statement
-                "select * from list_levels_goal_as_varchar(session_id => $1, u_id => $2, session_hash => $3::VARCHAR);",
-                &[&connection_id, &user_id, &session_hash_str]) // params
+                    "select * from list_levels_goal_as_varchar(session_id => $1, u_id => $2, session_hash => $3::VARCHAR);", // statement
+                    &[&connection_id, &user_id, &session_hash_str]) // params
                 .await; // Result<Vec<Row>, Error>
 
 
@@ -730,7 +736,10 @@ async fn list_levels_uid(
 
 
 /// Save the game.  Calls the DB procedure 'save_game_user_id'.
-/// Input: user_id,
+/// Input:
+///     connection_id (i32),
+///     user_id (i32),
+///     session_hash_str (String) // decoded from Option([u8; 32]) on the frontend
 ///     level_id,
 ///     moves (JSON String about player's moves and replies).
 ///         Currently (in the mini-game), only correct moves can be saved.
@@ -740,7 +749,9 @@ async fn list_levels_uid(
 /// Adds a row to the table 'saves'.
 #[server()]
 async fn save_game_uid(
+    connection_id: i32,
     user_id: i32,
+    session_hash_str: String,
     level_id : i16,
     moves : String) -> Result<i32, ServerFnError>
 {
@@ -761,8 +772,8 @@ async fn save_game_uid(
 
                 //      query
                 let res_save = client.query_one(
-                    "call save_game_user_id(user_id => $1::INTEGER, level_id => $2::smallint, moves => $3::TEXT::JSONB);", // statement
-                    &[&user_id, &level_id, &moves]
+                    "call save_game_user_id(session_id => $1, user_id => $2::INTEGER, session_hash => $3::VARCHAR,  level_id => $4::smallint, moves => $5::TEXT::JSONB);", // statement
+                    &[&connection_id, &user_id, &session_hash_str, &level_id, &moves]
                     )
                 .await;
 
