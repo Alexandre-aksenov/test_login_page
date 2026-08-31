@@ -683,7 +683,8 @@ async fn list_levels_uid(
 
 
                 let res_table_lvls = client.query(
-                "select * from list_levels_user_id(session_id => $1, u_id => $2, session_hash => $3::VARCHAR);", // statement
+                // "select * from list_levels_user_id(session_id => $1, u_id => $2, session_hash => $3::VARCHAR);", // statement
+                "select * from list_levels_goal_as_varchar(session_id => $1, u_id => $2, session_hash => $3::VARCHAR);",
                 &[&connection_id, &user_id, &session_hash_str]) // params
                 .await; // Result<Vec<Row>, Error>
 
