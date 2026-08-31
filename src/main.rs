@@ -171,7 +171,10 @@ fn Login() -> Element {
     let mut user_login = use_persistent("user_login", || String::new());
     let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
     let mut user_id = use_persistent("user_id", || 0);
-    // new in this version, 0 should stand for no active connection.
+    //  0 stands for no active connection.
+
+    // session_hash. Its initial value is None: Signal(Option<[u8; 32]>) ), standing for no active session.
+    let mut session_hash: Signal(Option<[u8; 32]>) = use_persistent("session_hash", || None );
 
     // Useful during login
     let mut candidate_user_login = use_signal(|| String::new());
