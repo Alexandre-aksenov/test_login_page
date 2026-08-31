@@ -282,11 +282,13 @@ fn Login() -> Element {
                             // Sign out user
                             // Calls the server fn 'logout'.
 
+                            // -> if *session_hash.read().is_some() to indicate that the hash itself is not needed for more than 1 instruction
+
                             match *session_hash.read() { // "immutable borrow" of this session property prevents invalidating it below (?!)
                                 Some(session_hash_arr) => {
                                     let res_logout = logout(*pagewize_conn_id.read(),
                                         *user_id.read(),
-                                        hex::encode(&session_hash_arr)) // TOADD encoding
+                                        hex::encode(&session_hash_arr))
                                     .await;
 
                                     match res_logout {
