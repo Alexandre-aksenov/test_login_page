@@ -6,8 +6,9 @@ use hex;
 
 use itertools::join;
 
-// For the minigame
-use test_login_page::{solution_lvl1, to_json};
+// solution_lvl1, to_json: for the minigame.
+// decode_session_hash: for decoding session hash received from the server.
+use test_login_page::{solution_lvl1, to_json, decode_session_hash};
 
 #[cfg(feature = "server")]
 use axum::extract::Query;
@@ -174,7 +175,7 @@ fn Login() -> Element {
     //  0 stands for no active connection.
 
     // session_hash. Its initial value is None: Signal(Option<[u8; 32]>) ), standing for no active session.
-    let mut session_hash: Signal(Option<[u8; 32]>) = use_persistent("session_hash", || None );
+    let mut session_hash: Signal<Option<[u8; 32]>> = use_persistent("session_hash", || None );
 
     // Useful during login
     let mut candidate_user_login = use_signal(|| String::new());
@@ -249,14 +250,15 @@ fn Login() -> Element {
                     onclick : move |_| async move {
                         if *signed_in.read() == false {
                             // Sign-in user
-                            // Calls the middleware fn 'login' -> 'login_user_connection_id'
+                            // Calls the middleware fn 'login_user_connection_id'
 
                             let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
                             // let res_response = login(candidate_user_login(), hashed_pwd).await;
                             let res_response = login_user_connection_id(candidate_user_login(), hashed_pwd).await;
 
-                            let response = res_response.unwrap_or((0, -4)); // -4 means: DX server did not reply
+                            // let response = res_response.unwrap_or((0, -4)); // -4 means: DX server did not reply
+                            let response = res_response.unwrap_or((0, -4, None));
 
                             let response_text = match (response.1 > 0) {
                                 true => {// In case of success, update state variables:
@@ -264,6 +266,7 @@ fn Login() -> Element {
                                     *signed_in.write() = true; // The button changes to "Sign out"
                                     *user_login.write() = candidate_user_login.read().clone();
                                     *user_id.write() = response.0;
+                                    *session_hash.write() = response.2;
 
                                     // clear candidate login (local var to this session).
                                     candidate_user_login.set(String::new());
@@ -292,6 +295,8 @@ fn Login() -> Element {
 
                                     *pagewize_conn_id.write() = 0;
                                     *user_id.write() = 0;
+
+                                    *session_hash.write() = None;
                                 },
                                 Err(e) => {
                                     response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
@@ -503,18 +508,21 @@ async fn register(
 ///  -2 should be returned if the row does not contain "new_connection_id"
 ///    (should not happen, according to the signature of the DB procedure).
 ///  -3 if login is rejected by DB (because the user does not exist or the password is wrong).
+/// new_session_hash: Option<[u8; 32]>,
+///   Some([u8; 32]) stands for success (the hash is then received from the DB),
+///   None stands for error.
 /// If login is successful, adds a row to the table 'connections'.
 #[server()]
 async fn login_user_connection_id(
     user_login: String, // if &str -> error[E0521]: borrowed data escapes outside of function
     hash_pwd: String
-) -> Result<(i32, i32), ServerFnError> // <- dioxus::prelude::ServerFnError
+) -> Result<(i32, i32, Option<[u8; 32]>), ServerFnError> // <- dioxus::prelude::ServerFnError
 {
     use tokio_postgres::NoTls;
 
     let res_client = tokio_postgres::connect("host=localhost port=5433 user=game password=pwd_game dbname=mydatabase", NoTls).await;
 
-    let (user_id, connection_id) = match res_client {
+    let (user_id, connection_id, session_hash) = match res_client {
         Ok((mut client, connection)) => {
 
             // Spawn 'connection'.
@@ -533,11 +541,18 @@ async fn login_user_connection_id(
 
             let mut new_connection_id: i32 = 0;
             let mut new_user_id: i32 = 0;
+            let mut new_session_hash: Option<[u8; 32]> = None;
 
             match res_login {
                 Ok(row) => {
                     new_connection_id = row.try_get("new_connection_id").unwrap_or(-2);
                     new_user_id = row.try_get("user_id").unwrap_or(0);
+                    // new_session_hash = row.try_get("session_hash").unwrap_or(None);
+                    new_session_hash = match row.try_get("new_session_hash") {
+                        // Ok(hash) => Some(hash), // TOADD decoding: DB returns hex encoding (VARCHAR of len 64)
+                        Ok(hash_varchar) => decode_session_hash(hash_varchar), // hash_varchar: VARCHAR in Postgres, attempt to read as &str
+                        Err(_) => None,
+                    };
                 }
                 Err(e) => {
                     eprintln!("Login failed : {}", e);
@@ -545,14 +560,14 @@ async fn login_user_connection_id(
                 }
             }
 
-            (new_user_id, new_connection_id)
+            (new_user_id, new_connection_id, new_session_hash)
         }
         Err(e) => {
             eprintln!("Failed to connect to database: {}", e);
-            (0, -1)
+            (0, -1, None)
         }};
 
-    Ok((user_id, connection_id))
+    Ok((user_id, connection_id, session_hash))
 }
 
 

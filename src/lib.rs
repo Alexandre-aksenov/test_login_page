@@ -68,7 +68,19 @@ pub fn solution_lvl1() -> [FullMove; 3]
     ]
 }
 
-
+/// Attempts to decode a hex-encoded session hash from a string.
+pub fn decode_session_hash(hex_str: &str) -> Option<[u8; 32]> {
+    match hex::decode(hex_str) {
+        Ok(bytes) => {
+            if bytes.len() == 32 {
+                Some(bytes.try_into().unwrap())
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
+    }
+}
 
 #[test]
 fn test_FullMove_to_json() {
