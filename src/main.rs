@@ -282,27 +282,39 @@ fn Login() -> Element {
                             // Sign out user
                             // Calls the server fn 'logout'.
 
-                            let res_logout = logout(*pagewize_conn_id.read()).await;
+                            match *session_hash.read() { // "immutable borrow" of this session property prevents invalidating it below (?!)
+                                Some(session_hash_arr) => {
+                                    let res_logout = logout(*pagewize_conn_id.read(),
+                                        *user_id.read(),
+                                        hex::encode(&session_hash_arr)) // TOADD encoding
+                                    .await;
 
-                            match res_logout {
-                                Ok(msg_logout) => {
-                                    // modify state variables.
-                                    response_msg.set(format!("{}", msg_logout));
-                                    *signed_in.write() = false;
+                                    match res_logout {
+                                        Ok(msg_logout) => {
+                                            // modify state variables.
+                                            response_msg.set(format!("{}", msg_logout));
+                                            *signed_in.write() = false;
 
-                                    user_login.set(String::new());
-                                    cleartext_pwd.set(String::new());
+                                            user_login.set(String::new());
+                                            cleartext_pwd.set(String::new());
 
-                                    *pagewize_conn_id.write() = 0;
-                                    *user_id.write() = 0;
+                                            *pagewize_conn_id.write() = 0;
+                                            *user_id.write() = 0;
 
-                                    *session_hash.write() = None;
-                                },
-                                Err(e) => {
-                                    response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
-                                }
-                            }
-                        } // end of "if *signed_in.read() ..."
+                                            *session_hash.write() = None;
+                                        },
+                                        Err(e) => {
+                                            response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
+                                        }
+                                    }  // end of 'match res_logout'
+                                    }, // end of 'match *session_hash.read() == Some(...)'
+                                None => {
+                                    response_msg.set(format!("Tried to logout from session {}. Error: session hash is None.", *pagewize_conn_id.read()));
+                                } // end of 'match *session_hash.read() == None
+                            }; // end of 'match *session_hash.read()'
+                                // },
+                                // }
+                        } // end of "if *signed_in.read() == false"
                     }, // end of 'onclick'
                     {button_text()}
                 } // end of 'button'
@@ -572,10 +584,16 @@ async fn login_user_connection_id(
 
 
 /// Log out.  Calls the DB procedure 'logout'.
-/// Input: connection_id (i32) received from the login function
+/// Input:
+///     connection_id (i32),
+///     user_id (i32),
+///     session_hash_str (String) // decoded from Option([u8; 32]) on the frontend
+/// received from the login function
 #[server()]
 async fn logout(
-    connection_id: i32
+    connection_id: i32,
+    user_id: i32,
+    session_hash_str: String
 ) -> Result<String, ServerFnError>
 {
     use tokio_postgres::NoTls;
@@ -593,9 +611,15 @@ async fn logout(
                 }
             });
 
+            /*
             let res_logout = client.execute(
                 "call logout(session_id => $1);",
                 &[&connection_id])
+                .await; // Result<u64, Error>
+            */
+            let res_logout = client.execute(
+                "call logout(session_id => $1, user_id => $2, session_hash => $3::VARCHAR);",
+                &[&connection_id, &user_id, &session_hash_str])
                 .await; // Result<u64, Error>
 
             match res_logout {
