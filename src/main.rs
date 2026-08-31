@@ -282,41 +282,35 @@ fn Login() -> Element {
                             // Sign out user
                             // Calls the server fn 'logout'.
 
-                            // -> if *session_hash.read().is_some() to indicate that the hash itself is not needed for more than 1 instruction
-
-                            match *session_hash.read() { // "immutable borrow" of this session property prevents invalidating it below (?!)
-                                Some(session_hash_arr) => {
-                                    let res_logout = logout(*pagewize_conn_id.read(),
+                            // let session_hash_arr = *session_hash.read().unwrap_or([0 as u8; 32]); // error: type [u8; 32] cannot be dereferenced
+                            let session_hash_arr = match *session_hash.read() {
+                                Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
+                                None => [0 as u8; 32], // this case should not happen when signed in
+                            }; // RR warning: "Match can be replaced ..."
+                            let res_logout = logout(*pagewize_conn_id.read(),
                                         *user_id.read(),
                                         hex::encode(&session_hash_arr))
                                     .await;
 
-                                    match res_logout {
-                                        Ok(msg_logout) => {
-                                            // modify state variables.
-                                            response_msg.set(format!("{}", msg_logout));
-                                            *signed_in.write() = false;
+                            match res_logout {
+                                Ok(msg_logout) => {
+                                    // modify state variables.
+                                    response_msg.set(format!("{}", msg_logout));
+                                    *signed_in.write() = false;
 
-                                            user_login.set(String::new());
-                                            cleartext_pwd.set(String::new());
+                                    user_login.set(String::new());
+                                    cleartext_pwd.set(String::new());
 
-                                            *pagewize_conn_id.write() = 0;
-                                            *user_id.write() = 0;
+                                    *pagewize_conn_id.write() = 0;
+                                    *user_id.write() = 0;
 
-                                            *session_hash.write() = None;
-                                        },
-                                        Err(e) => {
-                                            response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
-                                        }
-                                    }  // end of 'match res_logout'
-                                    }, // end of 'match *session_hash.read() == Some(...)'
-                                None => {
-                                    response_msg.set(format!("Tried to logout from session {}. Error: session hash is None.", *pagewize_conn_id.read()));
-                                } // end of 'match *session_hash.read() == None
-                            }; // end of 'match *session_hash.read()'
-                                // },
-                                // }
-                        } // end of "if *signed_in.read() == false"
+                                    *session_hash.write() = None;
+                                },
+                                Err(e) => {
+                                    response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
+                                }
+                            }  // end of 'match res_logout'
+                        } // end of "if *signed_in.read() == true"
                     }, // end of 'onclick'
                     {button_text()}
                 } // end of 'button'
