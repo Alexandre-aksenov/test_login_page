@@ -42,7 +42,18 @@ The global structure is described as three interacting components:
 
 * **Backend**: SQL-server (RDBMS: PostgreSQL 17), which should be initialized by the scripts in folder `Database` before starting the App, and is hosted locally at `http://localhost:5433`. It is responsible for keeping the information about users, connections, the users' progress.
 
-The tables are defined and initialized in `Database/create_tables.sql`. 
+The tables are defined and initialized in `Database/create_tables.sql`. The scripts are meant to be run in this order:
+* ./Database/create_tables.sql
+* ./Database/game_user.sql
+* ./Database/signup.sql
+* ./Database/v3/sign_in_user_id.sql
+* ./Database/check_session_exists.sql
+* ./Database/list_levels_goal_as_varchar.sql
+* ./Database/save_game_user_id.sql
+* ./Database/logout.sql
+* ./Database/check_session_exists_test_after_logout.sql
+* ./Database/signin2_same_user.sql
+
 The interfaces (functions and stored procedures) for use in the game are defined in scripts:
 * signup.sql,
 * sign_in_user_id.sql,
