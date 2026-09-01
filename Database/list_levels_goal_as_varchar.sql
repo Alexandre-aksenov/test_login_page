@@ -57,7 +57,7 @@ $$;
 
 -- test
 
-select * from list_levels_goal_as_varchar(session_id => 1 , u_id => 1, session_hash => '527fb4d903e7c614299f8a91eec7a02e2e306bfb54cbd399cc52d46b22bc0284'::VARCHAR);
+select * from list_levels_goal_as_varchar(session_id => 1 , u_id => 1, session_hash => '53388382b1548a525935ff1872082f70fa5efb46ae04185f2b41edc1dc30ba0c'::VARCHAR);
 /*
  level_id |           description           |            full_fen             | goal | won 
 ----------+---------------------------------+---------------------------------+------+-----
@@ -71,8 +71,8 @@ select * from list_levels_goal_as_varchar(session_id => 1 , u_id => 1, session_h
 -- check that the column 'goal' has been converted to VARCHAR
 SELECT
 	level_id,
-	left(ll.goal, 2)
-FROM list_levels_goal_as_varchar(session_id => 1 , u_id => 1, session_hash => '527fb4d903e7c614299f8a91eec7a02e2e306bfb54cbd399cc52d46b22bc0284'::VARCHAR) ll;
+	left(ll.goal, 2) -- a nontrivial string function
+FROM list_levels_goal_as_varchar(session_id => 1 , u_id => 1, session_hash => '53388382b1548a525935ff1872082f70fa5efb46ae04185f2b41edc1dc30ba0c'::VARCHAR) ll;
 /*
  level_id | left 
 ----------+------
@@ -82,3 +82,8 @@ FROM list_levels_goal_as_varchar(session_id => 1 , u_id => 1, session_hash => '5
 (3 rows)
 
 */
+
+-- check the session hash is necessary
+select * from list_levels_goal_as_varchar(session_id => 1 , u_id => 1, session_hash => 'ff'::VARCHAR);
+-- ERROR (expected):  Attempt to get levels without info about session.
+

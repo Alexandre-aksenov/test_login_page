@@ -63,13 +63,13 @@ select * from users;
 call signup(login => 'test_user1', pwd => 'beef1234');
 -- CALL
 
--- from admin user
+-- as the admin user
 select * from users;
 /*
  user_id |    login     |     pwd     | registration_date | highest_level_won 
 ---------+--------------+-------------+-------------------+-------------------
        1 | default_user | deadbeef	  | 2026-08-30        |                 0
-       2 | test_user1   | beef1234    | 2026-08-30        |                 0
+       2 | test_user1   | beef1234    | 2026-09-01        |                 0
 (2 rows)
 
  */

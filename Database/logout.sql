@@ -27,23 +27,19 @@ end;
 $$;
 -- CREATE PROCEDURE
 
-/*
-sess_exists := False;
-for sess in -- table of <=1 row
-	SELECT *
-	FROM  connections c
-	WHERE c.connection_id = session_id AND c.user_id = logout.user_id AND c.session_hash_key = session_hash
-loop
-	sess_exists := (sess.end_session is NULL);
-end loop;
-*/
 
--- test (from user 'game') after testing of other procedures
+-- test (as the user 'game') after testing other procedures
 
-
+-- (wrong session_id)
 call logout(session_id => 2,
 	user_id => 1, 
-	session_hash => '527fb4d903e7c614299f8a91eec7a02e2e306bfb54cbd399cc52d46b22bc0284'::VARCHAR);
+	session_hash => '53388382b1548a525935ff1872082f70fa5efb46ae04185f2b41edc1dc30ba0c'::VARCHAR);
+-- ERROR (expected):  Attempt to logout from an ended or inexisting session
+
+
+call logout(session_id => 1,
+	user_id => 1, 
+	session_hash => '53388382b1548a525935ff1872082f70fa5efb46ae04185f2b41edc1dc30ba0c'::VARCHAR);
 -- CALL
 
 select * from connections;
@@ -51,8 +47,8 @@ select * from connections;
 
  connection_id | user_id |                         session_hash_key                         |         start_session         |          end_session          
 ---------------+---------+------------------------------------------------------------------+-------------------------------+-------------------------------
-             2 |       1 | 527fb4d903e7c614299f8a91eec7a02e2e306bfb54cbd399cc52d46b22bc0284 | 2026-08-30 23:08:34.115934+00 | 2026-08-31 09:46:27.849172+00
+             1 |       1 | 53388382b1548a525935ff1872082f70fa5efb46ae04185f2b41edc1dc30ba0c | {time of start of testing}    | {time of end of testing}
 (1 row)
 
-
+The times are printed in the format: yyyy-mm-dd hh:mm:ss.sssss+00
 */

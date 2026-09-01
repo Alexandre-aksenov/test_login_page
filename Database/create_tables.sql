@@ -1,4 +1,5 @@
 -- Structure of tables for 'test_login_page'.
+-- Version of 30/8/2026
 
 
 CREATE TYPE game_status AS ENUM ('*', '1-0', '1/2-1/2', '0-1');
