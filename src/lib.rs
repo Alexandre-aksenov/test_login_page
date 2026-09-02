@@ -82,6 +82,17 @@ pub fn decode_session_hash(hex_str: &str) -> Option<[u8; 32]> {
     }
 }
 
+
+/// For gathering connection information (fields of fixed length)
+pub struct ConnectionInfo
+{
+    pub connection_id: i32,
+    pub user_id: i32,
+    pub session_hash: [u8; 32],
+}
+
+
+
 #[test]
 fn test_FullMove_to_json() {
     let full_move = FullMove::new("c6c7", "d5d6");

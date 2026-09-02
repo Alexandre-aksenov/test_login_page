@@ -6,9 +6,9 @@ use hex;
 
 use itertools::join;
 
-// solution_lvl1, to_json: for the minigame.
-// decode_session_hash: for decoding session hash received from the server.
-use test_login_page::{solution_lvl1, to_json, decode_session_hash};
+use test_login_page::{solution_lvl1, to_json, // for the minigame.
+                      decode_session_hash, // for decoding session hash received from the server.
+                      ConnectionInfo}; // for gathering connection info into 1 structure
 
 #[cfg(feature = "server")]
 use axum::extract::Query;
@@ -184,6 +184,11 @@ fn Login() -> Element {
     let mut response_msg: Signal<String> = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
 
+    // new in branch 'struct_connection_info'.
+    let mut connection_info: Signal<Option<ConnectionInfo>> = use_persistent("connection_info", || None);
+    // None means: not connected.
+
+
     // For the signed-in game
     let mut user_list_levels: Signal<Vec<LevelInfo>> = use_signal(|| Vec::new());
     let mut str_levels: Signal<String> = use_signal(|| String::from("DB response will go here "));
@@ -268,6 +273,15 @@ fn Login() -> Element {
                                     *user_id.write() = response.0;
                                     *session_hash.write() = response.2;
 
+                                    // -> structure
+                                    *connection_info.write(
+                                        Some(ConnectionInfo {
+                                            connection_id: response.1,
+                                            user_id: response.0,
+                                            session_hash: response.2.unwrap(),
+                                        })
+                                    );
+
                                     // clear candidate login (local var to this session).
                                     candidate_user_login.set(String::new());
 
@@ -306,6 +320,8 @@ fn Login() -> Element {
                                     *user_id.write() = 0;
 
                                     *session_hash.write() = None;
+
+                                    // *connection_info.write(None);
                                 },
                                 Err(e) => {
                                     response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
