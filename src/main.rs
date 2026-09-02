@@ -259,11 +259,9 @@ fn Login() -> Element {
 
                             let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
-                            // let res_response = login(candidate_user_login(), hashed_pwd).await;
                             let res_response = login_user_connection_id(candidate_user_login(), hashed_pwd).await;
 
-                            // let response = res_response.unwrap_or((0, -4)); // -4 means: DX server did not reply
-                            let response = res_response.unwrap_or((0, -4, None));
+                            let response = res_response.unwrap_or((0, -4, None)); // -4 means: DX server did not reply
 
                             let response_text = match (response.1 > 0) {
                                 true => {// In case of success, update state variables:
@@ -334,6 +332,7 @@ fn Login() -> Element {
 
 
         // USEFUL content: the mini-game
+        /*
         if *signed_in.read() == false {
             div {"Logged-in game will appear after logging in."}
         } else {
@@ -344,12 +343,6 @@ fn Login() -> Element {
                 onclick : move |_| async move {
                     str_levels.set(String::from("Calling the list_levels() fn"));
 
-                    /*
-                    let session_hash_arr = match *session_hash.read() {
-                        Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
-                        None => [0 as u8; 32], // this case should not happen when signed in
-                    };
-                     */
                     let session_hash_arr = match *connection_info.read() {
                         Some(inner) => inner.copy_session_hash(),
                         None => [0 as u8; 32], // this case should not happen when signed in
@@ -440,12 +433,7 @@ fn Login() -> Element {
                     button { // "Save"
                         class : "btn-primary",
                         onclick : move |_| async move {
-                                /*
-                            let session_hash_arr = match *session_hash.read() {
-                                Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
-                                None => [0 as u8; 32], // this case should not happen when signed in
-                            };
-                            */
+
                                 let session_hash_arr = match *connection_info.read() {
                                     Some(inner) => inner.copy_session_hash(),
                                     None => [0 as u8; 32], // this case should not happen when signed in
@@ -479,6 +467,29 @@ fn Login() -> Element {
             } // end of: if next_level is not none
 
         } // end of: if Signed in
+
+        // works, but requires 2 matches on an impossible case
+         */
+         
+
+        /*
+        match *connection_info.read() {
+            None => {
+                div {"Logged-in game will appear after logging in."}
+            },
+            Some(inner) => {
+                div {"Logged-in game will appear soon."}
+            }
+        }
+        */
+        // -> error on 'div' : expected identifier or integer (?!)
+
+        if (*connection_info.read()).is_some() {
+            div {"Logged-in game will appear soon."}
+        } else {
+            div {"Logged-in game will appear after logging in."}
+        }
+        // -> works , although these two blocks seem to be equivalent
 
     } // end of rsx!
 } // end of component
