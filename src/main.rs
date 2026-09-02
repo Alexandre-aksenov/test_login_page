@@ -319,7 +319,7 @@ fn Login() -> Element {
 
                                     *session_hash.write() = None;
 
-                                    // *connection_info.write(None);
+                                    *connection_info.write() = None;
                                 },
                                 Err(e) => {
                                     response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
