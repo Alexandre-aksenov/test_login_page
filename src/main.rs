@@ -434,10 +434,16 @@ fn Login() -> Element {
                     button { // "Save"
                         class : "btn-primary",
                         onclick : move |_| async move {
+                                /*
                             let session_hash_arr = match *session_hash.read() {
                                 Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
                                 None => [0 as u8; 32], // this case should not happen when signed in
                             };
+                            */
+                                let session_hash_arr = match *connection_info.read() {
+                                    Some(inner) => inner.copy_session_hash(),
+                                    None => [0 as u8; 32], // this case should not happen when signed in
+                                };
 
                             let res_last_saveid = save_game_uid(
                                     *pagewize_conn_id.read(),

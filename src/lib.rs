@@ -86,7 +86,8 @@ pub fn decode_session_hash(hex_str: &str) -> Option<[u8; 32]> {
 /// For gathering connection information (fields of fixed size in bytes).
 /// Fn 'use_persistent', called in main.rs, requires:
 /// Serialize + DeserializeOwned + Clone + Send + Sync + PartialEq + 'static
-#[derive(Clone, PartialEq, serde::Deserialize, serde::Serialize)]
+/// match '*connection_info.read()' requires Copy
+#[derive(Copy, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct ConnectionInfo
 {
     pub connection_id: i32,
