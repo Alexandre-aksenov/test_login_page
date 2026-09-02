@@ -7,7 +7,7 @@ use hex;
 use itertools::join;
 
 use test_login_page::{solution_lvl1, to_json, // for the minigame.
-                      decode_session_hash, // for decoding session hash received from the server.
+                      decode_session_hash, // for decoding session hash received from the server in middleware fn 'login_user_connection_id'.
                       ConnectionInfo}; // for gathering connection info into 1 structure
 
 #[cfg(feature = "server")]
@@ -344,8 +344,14 @@ fn Login() -> Element {
                 onclick : move |_| async move {
                     str_levels.set(String::from("Calling the list_levels() fn"));
 
+                    /*
                     let session_hash_arr = match *session_hash.read() {
                         Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
+                        None => [0 as u8; 32], // this case should not happen when signed in
+                    };
+                     */
+                    let session_hash_arr = match *connection_info.read() {
+                        Some(inner) => inner.copy_session_hash(),
                         None => [0 as u8; 32], // this case should not happen when signed in
                     };
 
@@ -592,7 +598,7 @@ async fn login_user_connection_id(
                     new_user_id = row.try_get("user_id").unwrap_or(0);
                     // new_session_hash = row.try_get("session_hash").unwrap_or(None);
                     new_session_hash = match row.try_get("new_session_hash") {
-                        // Ok(hash) => Some(hash), // TOADD decoding: DB returns hex encoding (VARCHAR of len 64)
+                        // decoding: DB returns hex encoding (VARCHAR of len 64)
                         Ok(hash_varchar) => decode_session_hash(hash_varchar), // hash_varchar: VARCHAR in Postgres, attempt to read as &str
                         Err(_) => None,
                     };
