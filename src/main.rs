@@ -274,13 +274,11 @@ fn Login() -> Element {
                                     *session_hash.write() = response.2;
 
                                     // -> structure
-                                    *connection_info.write(
-                                        Some(ConnectionInfo {
+                                    *connection_info.write() = Some(ConnectionInfo {
                                             connection_id: response.1,
                                             user_id: response.0,
                                             session_hash: response.2.unwrap(),
-                                        })
-                                    );
+                                        });
 
                                     // clear candidate login (local var to this session).
                                     candidate_user_login.set(String::new());
