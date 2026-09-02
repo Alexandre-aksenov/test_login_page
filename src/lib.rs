@@ -94,10 +94,18 @@ pub struct ConnectionInfo
     pub session_hash: [u8; 32],
 }
 
-
+impl ConnectionInfo {
+    
+    /// Copies the field session_hash from the ConnectionInfo struct
+    /// for passing the copy from frontend to middleware.
+    pub fn copy_session_hash(&self) -> [u8; 32] {
+        self.session_hash
+    }
+    
+}
 
 #[test]
-fn test_FullMove_to_json() {
+fn test_fullmove_to_json() {
     let full_move = FullMove::new("c6c7", "d5d6");
     let json_str = full_move.to_json();
     println!("JSON string: {}", json_str); // {"player": "c6c7", "opponent": "d5d6"}
