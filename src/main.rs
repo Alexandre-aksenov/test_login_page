@@ -167,15 +167,15 @@ fn Signup() -> Element {
 #[component]
 fn Login() -> Element {
     // Signal variables (visible in the window)
-    let mut signed_in = use_persistent("signed_in", || false);
+    // let mut signed_in = use_persistent("signed_in", || false);
 
     let mut user_login = use_persistent("user_login", || String::new());
-    let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
-    let mut user_id = use_persistent("user_id", || 0);
+    // let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
+    // let mut user_id = use_persistent("user_id", || 0);
     //  0 stands for no active connection.
 
     // session_hash. Its initial value is None: Signal(Option<[u8; 32]>) ), standing for no active session.
-    let mut session_hash: Signal<Option<[u8; 32]>> = use_persistent("session_hash", || None );
+    // let mut session_hash: Signal<Option<[u8; 32]>> = use_persistent("session_hash", || None );
 
     // new in branch 'struct_connection_info'.
     let mut connection_info: Signal<Option<ConnectionInfo>> = use_persistent("connection_info", || None);
@@ -208,7 +208,7 @@ fn Login() -> Element {
     let correct_sol = use_signal(|| solution_lvl1());
 
     // initialization depending on whether the user is signed in
-    if *signed_in.read() {
+    if  connection_info().is_some() { // connection_info().is_some() <- *signed_in.read()
         button_text.set(String::from("Sign out"));
         response_msg.set(format!("You are signed in as: {}", *user_login.read()));
     } else { // This screen appears on the 1st load
@@ -268,11 +268,11 @@ fn Login() -> Element {
 
                                 let response_text = match (response.1 > 0) {
                                     true => {// In case of success, update state variables:
-                                        *pagewize_conn_id.write() = response.1;
-                                        *signed_in.write() = true; // The button changes to "Sign out"
+                                        // *pagewize_conn_id.write() = response.1;
+                                        // *signed_in.write() = true; // The button changes to "Sign out"
                                         *user_login.write() = candidate_user_login.read().clone();
-                                        *user_id.write() = response.0;
-                                        *session_hash.write() = response.2;
+                                        // *user_id.write() = response.0;
+                                        // *session_hash.write() = response.2;
 
                                         // -> structure
                                         *connection_info.write() = Some(ConnectionInfo {
@@ -305,15 +305,15 @@ fn Login() -> Element {
                                     Ok(msg_logout) => {
                                         // modify state variables.
                                         response_msg.set(format!("{}", msg_logout));
-                                        *signed_in.write() = false;
+                                        // *signed_in.write() = false;
 
                                         user_login.set(String::new());
                                         cleartext_pwd.set(String::new());
 
-                                        *pagewize_conn_id.write() = 0;
-                                        *user_id.write() = 0;
+                                        // *pagewize_conn_id.write() = 0;
+                                        // *user_id.write() = 0;
 
-                                        *session_hash.write() = None;
+                                        // *session_hash.write() = None;
 
                                         *connection_info.write() = None;
                                     },
@@ -337,7 +337,6 @@ fn Login() -> Element {
                 div {"Logged-in game will appear after logging in."}
             },
             Some(connection) => rsx! {
-                // div {"Connected as id {inner.user_id}."}
                 div {"Logged-in game coming soon."}
 
                 button { // "New game"
@@ -573,7 +572,7 @@ async fn login_user_connection_id(
                 Ok(row) => {
                     new_connection_id = row.try_get("new_connection_id").unwrap_or(-2);
                     new_user_id = row.try_get("user_id").unwrap_or(0);
-                    // new_session_hash = row.try_get("session_hash").unwrap_or(None);
+
                     new_session_hash = match row.try_get("new_session_hash") {
                         // decoding: DB returns hex encoding (VARCHAR of len 64)
                         Ok(hash_varchar) => decode_session_hash(hash_varchar), // hash_varchar: VARCHAR in Postgres, attempt to read as &str
