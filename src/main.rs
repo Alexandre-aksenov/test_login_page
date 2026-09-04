@@ -477,10 +477,91 @@ fn Login() -> Element {
             None => rsx! {
                 div {"Logged-in game will appear after logging in."}
             },
-            Some(inner) => rsx! {
-                div {"Connected as id {inner.user_id}."}
-            }
-        }
+            Some(connection) => rsx! {
+                // div {"Connected as id {inner.user_id}."}
+                div {"Logged-in game coming soon."}
+
+                button { // "New game"
+                    class : "btn-primary",
+                    onclick : move |_| async move {
+                        str_levels.set(String::from("Calling the list_levels() fn"));
+
+                        /*
+                        let session_hash_arr = match *connection_info.read() {
+                            Some(inner) => inner.copy_session_hash(),
+                            None => [0 as u8; 32], // this case should not happen when signed in
+                        };
+
+                        // query the list of levels for the user
+                        user_list_levels.set(
+                            list_levels_uid(*pagewize_conn_id.read(),
+                                            *user_id.read(),
+                                            hex::encode(&session_hash_arr))
+                            .await
+                            .unwrap_or(Vec::new())
+                        );
+                        */
+                        // query the list of levels for the user
+                        user_list_levels.set(
+                            list_levels_uid(*pagewize_conn_id.read(), // -> connection, after copying the other features
+                                            *user_id.read(),
+                                            hex::encode(&connection.session_hash))
+                            .await
+                            .unwrap_or(Vec::new())
+                        );
+
+                        str_levels.set(display_concat_levels_par(&*user_list_levels.read()));
+                        next_level.set(next_unsolved_level(&*user_list_levels.read()));
+                    }, // end of onclick action.
+                    "New game"
+                } // end of button
+
+                div {dangerous_inner_html: "{str_levels.read()}"}
+
+                // The mini-game itself
+                if (next_level.read().is_none()) { // -> 2nd pattern-matching (after the global one is solved)
+                    div {"No more levels (you've solved the game or should click New Game to see options)"}
+                }
+                else {
+                    div {"Can start level {next_level.read().unwrap()}"}
+
+                    button { // "Start next level"
+                        class : "btn-primary",
+                        onclick : move |_| async move { // to-ADAPT
+                            str_levels.set(String::from("Starting the level..."));
+
+                            current_level.set(*next_level.read());
+                        }, // end of onclick action.
+                        "Start next level"
+                    } // end of button
+
+                    // The mini-game itself
+                    if (current_level.read().is_none()) { // -> 2rd pattern-matching
+                        div {"The mini-game will appear here"}
+                    }
+                    else {
+                        div {"Started level {current_level.read().unwrap()}"}
+                        // TOADD the mini-game here
+
+                        div { // input 1st player's move
+                            input {
+                                type : "text",
+                                placeholder: "1st move",
+                                oninput: move |event| {
+                                    player_move1.set(event.value());
+                                },
+                            }
+                        } // end of the div to input text field
+
+                        // COPY from here
+
+                    } // end of: if next_level is not none
+
+
+                }
+
+            } // end of hand connection_info => Some(connection:ConnectionInfo)
+        } // end of match *connection_info.read()
 
 
         /*
