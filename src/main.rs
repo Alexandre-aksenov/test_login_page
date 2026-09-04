@@ -255,7 +255,6 @@ fn Login() -> Element {
                 button {
                     class : "btn-primary",
                     onclick : move |_| async move {
-                        // if connection_info().is_none() {
                         match &mut (connection_info()) {
                             &mut None => {
                                 // Sign-in user
@@ -296,24 +295,11 @@ fn Login() -> Element {
                                 // Sign out user
                                 // Calls the server fn 'logout'.
 
-                                let session_hash_arr = match *session_hash.read() {
-                                    Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
-                                    None => [0 as u8; 32], // this case should not happen when signed in
-                                }; // RR warning: "Match can be replaced ...", but the most intuitive attempt (comment below) fails.
-                                // let session_hash_arr = *session_hash.read().unwrap_or([0 as u8; 32]); // error: type [u8; 32] cannot be dereferenced
-
-
-                                let res_logout = logout(*pagewize_conn_id.read(),
-                                            *user_id.read(),
-                                            hex::encode(&session_hash_arr)) //-> connection.session_hash
+                                let res_logout = logout(
+                                            connection.connection_id,
+                                            connection.user_id,
+                                            hex::encode(&connection.session_hash))
                                         .await;
-
-                                /*
-                                let res_logout = logout(*pagewize_conn_id.read(),
-                                    *user_id.read(),
-                                    hex::encode(&((*connection_info.read()).session_hash))) //-> no field `session_hash` on type `std::option::Option<ConnectionInfo>`
-                                .await;
-                                */
 
                                 match res_logout {
                                     Ok(msg_logout) => {
@@ -332,7 +318,7 @@ fn Login() -> Element {
                                         *connection_info.write() = None;
                                     },
                                     Err(e) => {
-                                        response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
+                                        response_msg.set(format!("Tried to logout from session {}. Error: {}", connection.connection_id, e));
                                     }
                                 }  // end of 'match res_logout'
                             } // end of "if *signed_in.read() == true" -> end of Some branch
