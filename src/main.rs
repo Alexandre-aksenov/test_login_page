@@ -225,7 +225,7 @@ fn Login() -> Element {
                 "{response_msg}"
             }
 
-            if *signed_in.read() == false {
+            if connection_info().is_none() { // *signed_in.read() == false
                 div {
                     class: "row col2",
                     div {
