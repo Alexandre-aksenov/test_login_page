@@ -472,24 +472,25 @@ fn Login() -> Element {
          */
          
 
-        /*
+
         match *connection_info.read() {
-            None => {
+            None => rsx! {
                 div {"Logged-in game will appear after logging in."}
             },
-            Some(inner) => {
-                div {"Logged-in game will appear soon."}
+            Some(inner) => rsx! {
+                div {"Connected as id {inner.user_id}."}
             }
         }
-        */
-        // -> error on 'div' : expected identifier or integer (?!)
 
+
+        /*
         if (*connection_info.read()).is_some() {
             div {"Logged-in game will appear soon."}
         } else {
             div {"Logged-in game will appear after logging in."}
         }
-        // -> works , although these two blocks seem to be equivalent
+        */
+        // -> attempt with if/else, same pattern as the previous version.
 
     } // end of rsx!
 } // end of component
