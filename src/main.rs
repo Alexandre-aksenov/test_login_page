@@ -332,147 +332,6 @@ fn Login() -> Element {
 
 
         // USEFUL content: the mini-game
-        /*
-        if *signed_in.read() == false {
-            div {"Logged-in game will appear after logging in."}
-        } else {
-            div {"Logged-in game coming soon."}
-
-            button { // "New game"
-                class : "btn-primary",
-                onclick : move |_| async move {
-                    str_levels.set(String::from("Calling the list_levels() fn"));
-
-                    let session_hash_arr = match *connection_info.read() {
-                        Some(inner) => inner.copy_session_hash(),
-                        None => [0 as u8; 32], // this case should not happen when signed in
-                    };
-
-                    // query the list of levels for the user
-                    user_list_levels.set(
-                        list_levels_uid(*pagewize_conn_id.read(),
-                                        *user_id.read(),
-                                        hex::encode(&session_hash_arr))
-                        .await
-                        .unwrap_or(Vec::new())
-                    );
-
-                    str_levels.set(display_concat_levels_par(&*user_list_levels.read()));
-                    next_level.set(next_unsolved_level(&*user_list_levels.read()));
-                }, // end of onclick action.
-                "New game"
-            } // end of button
-
-            div {dangerous_inner_html: "{str_levels.read()}"}
-
-            if (next_level.read().is_none()) {
-                div {"No more levels (you've solved the game or should click New Game to see options)"}
-            }
-            else {
-                div {"Can start level {next_level.read().unwrap()}"}
-
-                button { // "Start next level"
-                    class : "btn-primary",
-                    onclick : move |_| async move { // to-ADAPT
-                        str_levels.set(String::from("Starting the level..."));
-
-                        current_level.set(*next_level.read());
-                    }, // end of onclick action.
-                    "Start next level"
-                } // end of button
-
-                // The mini-game itself
-                if (current_level.read().is_none()) {
-                    div {"The mini-game will appear here"}
-                }
-                else {
-                    div {"Started level {current_level.read().unwrap()}"}
-                    // TOADD the mini-game here
-
-                                    div {
-                    input {
-                        type : "text",
-                        placeholder: "1st move",
-                        oninput: move |event| {
-                            player_move1.set(event.value());
-                        },
-                    }
-                }
-
-                if *player_move1.read() == // correct_sol[0].player.to_string() {
-                    (correct_sol.read())[0].player.to_string() {
-                    // Update num_correct_moves, (a possible adjustment of interface: disable input above)
-
-                    button { // "Correct!"
-                        class : "btn-primary",
-                        onclick : move |_| async move {
-                            *num_correct_moves.write() = 1;
-
-                        }, // end of onclick action.
-                        "Correct!"
-                    } // end of button
-                }
-                else {
-                    div {"Incorrect."}
-                }
-
-                // Show opponent's reply
-                if *num_correct_moves.read() >= 1 {
-                    // div {"Opponent's reply: {correct_sol[0].opponent.to_string()}"}
-                        div {"Opponent's reply: {(correct_sol.read())[0].opponent.to_string()}"}
-                }
-
-                // 2nd move will be shown after the first move is correct.
-                /*
-                if *num_correct_moves.read() >= 1 {
-                    div {"2nd move:"}
-                } */
-
-                // Button to save progress
-                if *num_correct_moves.read() >= 1 {
-                    button { // "Save"
-                        class : "btn-primary",
-                        onclick : move |_| async move {
-
-                                let session_hash_arr = match *connection_info.read() {
-                                    Some(inner) => inner.copy_session_hash(),
-                                    None => [0 as u8; 32], // this case should not happen when signed in
-                                };
-
-                            let res_last_saveid = save_game_uid(
-                                    *pagewize_conn_id.read(),
-                                    *user_id.read(),
-                                    hex::encode(&session_hash_arr),
-                                    current_level.read().expect("level could not be read"),
-                                    to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
-                            .await;
-
-                            match res_last_saveid {
-                                Ok(saveid) => {
-                                    *last_saveid.write() = saveid;
-                                },
-                                Err(_) => {
-                                    *last_saveid.write() = -1;
-                                }
-                            }
-                        }, // end of onclick action.
-                        "Save progress"
-                    } // end of button to save progress
-
-                    // Show save_id , next feature
-                } // end of if num_correct_moves.read() >= 1
-
-                } // end of: if current_level.read() is not none
-
-            } // end of: if next_level is not none
-
-        } // end of: if Signed in
-
-        // works, but requires 2 matches on an impossible case
-         */
-         
-
-
         match *connection_info.read() {
             None => rsx! {
                 div {"Logged-in game will appear after logging in."}
@@ -486,21 +345,6 @@ fn Login() -> Element {
                     onclick : move |_| async move {
                         str_levels.set(String::from("Calling the list_levels() fn"));
 
-                        /*
-                        let session_hash_arr = match *connection_info.read() {
-                            Some(inner) => inner.copy_session_hash(),
-                            None => [0 as u8; 32], // this case should not happen when signed in
-                        };
-
-                        // query the list of levels for the user
-                        user_list_levels.set(
-                            list_levels_uid(*pagewize_conn_id.read(),
-                                            *user_id.read(),
-                                            hex::encode(&session_hash_arr))
-                            .await
-                            .unwrap_or(Vec::new())
-                        );
-                        */
                         // query the list of levels for the user
                         user_list_levels.set(
                             list_levels_uid(*pagewize_conn_id.read(), // -> connection, after copying the other features
@@ -553,25 +397,65 @@ fn Login() -> Element {
                             }
                         } // end of the div to input text field
 
-                        // COPY from here
+                        if *player_move1.read() ==
+                            (correct_sol.read())[0].player.to_string() {
+                            // Update num_correct_moves
 
-                    } // end of: if next_level is not none
+                            button { // "Correct!"
+                                class : "btn-primary",
+                                onclick : move |_| async move {
+                                    *num_correct_moves.write() = 1;
+                                }, // end of onclick action.
+                                "Correct!"
+                            } // end of button
+                        }
+                        else {
+                            div {"Incorrect."}
+                        } // end of if/else block: reaction to user's 1st move
 
+                        // Show opponent's reply
+                        if *num_correct_moves.read() >= 1 {
+                                div {"Opponent's reply: {(correct_sol.read())[0].opponent.to_string()}"}
+                        }
 
-                }
+                        // 2nd move will be shown after the first move is correct.
+
+                        // button save progress
+                        if *num_correct_moves.read() >= 1 {
+                            button { // "Save"
+                                class : "btn-primary",
+                                // onclick
+                                onclick : move |_| async move {
+
+                                    let res_last_saveid = save_game_uid(
+                                            *pagewize_conn_id.read(), // -> connection
+                                            *user_id.read(),
+                                            hex::encode(&connection.session_hash), // -> &connection.session_hash
+                                            current_level.read().expect("level could not be read"),
+                                            to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
+                                    .await;
+
+                                    // save_id for printing below
+                                    match res_last_saveid {
+                                        Ok(saveid) => {
+                                            *last_saveid.write() = saveid;
+                                        },
+                                        Err(_) => {
+                                            *last_saveid.write() = -1;
+                                        }
+                                    }
+                                }, // end of onclick action.
+                                "Save progress"
+                            } // end of button to save progress
+
+                        } // end of: if num_correct_moves.read() >= 1
+
+                    } // end of: if current_level is not none
+
+                } // end of: if next_level is not none
 
             } // end of hand connection_info => Some(connection:ConnectionInfo)
         } // end of match *connection_info.read()
-
-
-        /*
-        if (*connection_info.read()).is_some() {
-            div {"Logged-in game will appear soon."}
-        } else {
-            div {"Logged-in game will appear after logging in."}
-        }
-        */
-        // -> attempt with if/else, same pattern as the previous version.
 
     } // end of rsx!
 } // end of component
