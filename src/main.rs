@@ -177,6 +177,10 @@ fn Login() -> Element {
     // session_hash. Its initial value is None: Signal(Option<[u8; 32]>) ), standing for no active session.
     let mut session_hash: Signal<Option<[u8; 32]>> = use_persistent("session_hash", || None );
 
+    // new in branch 'struct_connection_info'.
+    let mut connection_info: Signal<Option<ConnectionInfo>> = use_persistent("connection_info", || None);
+    // None means: not connected.
+
     // Useful during login
     let mut candidate_user_login = use_signal(|| String::new());
     let mut cleartext_pwd = use_signal(|| String::new());
@@ -184,9 +188,7 @@ fn Login() -> Element {
     let mut response_msg: Signal<String> = use_signal(|| String::new());
     let mut button_text = use_signal(|| String::new());
 
-    // new in branch 'struct_connection_info'.
-    let mut connection_info: Signal<Option<ConnectionInfo>> = use_persistent("connection_info", || None);
-    // None means: not connected.
+
 
 
     // For the signed-in game
