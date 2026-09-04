@@ -355,7 +355,7 @@ fn Login() -> Element {
 
                         // query the list of levels for the user
                         user_list_levels.set(
-                            list_levels_uid(connection.connection_id, // -> connection
+                            list_levels_uid(connection.connection_id,
                                             connection.user_id,
                                             hex::encode(&connection.session_hash))
                             .await
@@ -371,7 +371,7 @@ fn Login() -> Element {
                 div {dangerous_inner_html: "{str_levels.read()}"}
 
                 // The mini-game itself
-                if (next_level.read().is_none()) { // -> 2nd pattern-matching (after the global one is solved)
+                if (next_level.read().is_none()) { // -> 2nd pattern-matching ()
                     div {"No more levels (you've solved the game or should click New Game to see options)"}
                 }
                 else {
@@ -379,7 +379,7 @@ fn Login() -> Element {
 
                     button { // "Start next level"
                         class : "btn-primary",
-                        onclick : move |_| async move { // to-ADAPT
+                        onclick : move |_| async move {
                             str_levels.set(String::from("Starting the level..."));
 
                             current_level.set(*next_level.read());
@@ -388,7 +388,7 @@ fn Login() -> Element {
                     } // end of button
 
                     // The mini-game itself
-                    if (current_level.read().is_none()) { // -> 2rd pattern-matching
+                    if (current_level.read().is_none()) { // -> 3rd pattern-matching ()
                         div {"The mini-game will appear here"}
                     }
                     else {
@@ -436,11 +436,11 @@ fn Login() -> Element {
                                 onclick : move |_| async move {
 
                                     let res_last_saveid = save_game_uid(
-                                            *pagewize_conn_id.read(), // -> connection
-                                            *user_id.read(),
-                                            hex::encode(&connection.session_hash), // -> &connection.session_hash
-                                            current_level.read().expect("level could not be read"),
-                                            to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
+                                        connection.connection_id,
+                                        connection.user_id,
+                                        hex::encode(&connection.session_hash),
+                                        current_level.read().expect("level could not be read"),
+                                        to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
                                     .await;
 
                                     // save_id for printing below
