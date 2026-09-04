@@ -255,7 +255,8 @@ fn Login() -> Element {
                 button {
                     class : "btn-primary",
                     onclick : move |_| async move {
-                        if *signed_in.read() == false {
+                        // if *signed_in.read() == false {
+                        if connection_info().is_none() {
                             // Sign-in user
                             // Calls the middleware fn 'login_user_connection_id'
 
