@@ -255,87 +255,90 @@ fn Login() -> Element {
                 button {
                     class : "btn-primary",
                     onclick : move |_| async move {
-                        // if *signed_in.read() == false {
-                        if connection_info().is_none() {
-                            // Sign-in user
-                            // Calls the middleware fn 'login_user_connection_id'
+                        // if connection_info().is_none() {
+                        match &mut (connection_info()) {
+                            &mut None => {
+                                // Sign-in user
+                                // Calls the middleware fn 'login_user_connection_id'
 
-                            let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
+                                let hashed_pwd = hex::encode(sha3_256(cleartext_pwd().as_bytes()));
 
-                            let res_response = login_user_connection_id(candidate_user_login(), hashed_pwd).await;
+                                let res_response = login_user_connection_id(candidate_user_login(), hashed_pwd).await;
 
-                            let response = res_response.unwrap_or((0, -4, None)); // -4 means: DX server did not reply
+                                let response = res_response.unwrap_or((0, -4, None)); // -4 means: DX server did not reply
 
-                            let response_text = match (response.1 > 0) {
-                                true => {// In case of success, update state variables:
-                                    *pagewize_conn_id.write() = response.1;
-                                    *signed_in.write() = true; // The button changes to "Sign out"
-                                    *user_login.write() = candidate_user_login.read().clone();
-                                    *user_id.write() = response.0;
-                                    *session_hash.write() = response.2;
+                                let response_text = match (response.1 > 0) {
+                                    true => {// In case of success, update state variables:
+                                        *pagewize_conn_id.write() = response.1;
+                                        *signed_in.write() = true; // The button changes to "Sign out"
+                                        *user_login.write() = candidate_user_login.read().clone();
+                                        *user_id.write() = response.0;
+                                        *session_hash.write() = response.2;
 
-                                    // -> structure
-                                    *connection_info.write() = Some(ConnectionInfo {
-                                            connection_id: response.1,
-                                            user_id: response.0,
-                                            session_hash: response.2.unwrap(),
-                                        });
+                                        // -> structure
+                                        *connection_info.write() = Some(ConnectionInfo {
+                                                connection_id: response.1,
+                                                user_id: response.0,
+                                                session_hash: response.2.unwrap(),
+                                            });
 
-                                    // clear candidate login (local var to this session).
-                                    candidate_user_login.set(String::new());
+                                        // clear candidate login (local var to this session).
+                                        candidate_user_login.set(String::new());
 
-                                    format!("Login successful, connection id {}", response.1)
-                                },
-                                false => format!("Login failed, code {}", response.1),
-                            };
+                                        format!("Login successful, connection id {}", response.1)
+                                    },
+                                    false => format!("Login failed, code {}", response.1),
+                                };
 
-                            response_msg.set(response_text);
+                                response_msg.set(response_text);
+                            }, // end of None branch
+                            &mut Some(connection) => { // *signed_in.read() == true
+                                // Sign out user
+                                // Calls the server fn 'logout'.
 
-                        } else { // *signed_in.read() == true
-                            // Sign out user
-                            // Calls the server fn 'logout'.
-
-                            let session_hash_arr = match *session_hash.read() {
-                                Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
-                                None => [0 as u8; 32], // this case should not happen when signed in
-                            }; // RR warning: "Match can be replaced ...", but the most intuitive attempt (comment below) fails.
-                            // let session_hash_arr = *session_hash.read().unwrap_or([0 as u8; 32]); // error: type [u8; 32] cannot be dereferenced
+                                let session_hash_arr = match *session_hash.read() {
+                                    Some(inner_arr) => inner_arr, // copy of contents of 'session_hash'
+                                    None => [0 as u8; 32], // this case should not happen when signed in
+                                }; // RR warning: "Match can be replaced ...", but the most intuitive attempt (comment below) fails.
+                                // let session_hash_arr = *session_hash.read().unwrap_or([0 as u8; 32]); // error: type [u8; 32] cannot be dereferenced
 
 
-                            let res_logout = logout(*pagewize_conn_id.read(),
-                                        *user_id.read(),
-                                        hex::encode(&session_hash_arr)) //-> connection.session_hash
-                                    .await;
+                                let res_logout = logout(*pagewize_conn_id.read(),
+                                            *user_id.read(),
+                                            hex::encode(&session_hash_arr)) //-> connection.session_hash
+                                        .await;
 
-                            /*
-                            let res_logout = logout(*pagewize_conn_id.read(),
-                                *user_id.read(),
-                                hex::encode(&((*connection_info.read()).session_hash))) //-> no field `session_hash` on type `std::option::Option<ConnectionInfo>`
-                            .await;
-                            */
+                                /*
+                                let res_logout = logout(*pagewize_conn_id.read(),
+                                    *user_id.read(),
+                                    hex::encode(&((*connection_info.read()).session_hash))) //-> no field `session_hash` on type `std::option::Option<ConnectionInfo>`
+                                .await;
+                                */
 
-                            match res_logout {
-                                Ok(msg_logout) => {
-                                    // modify state variables.
-                                    response_msg.set(format!("{}", msg_logout));
-                                    *signed_in.write() = false;
+                                match res_logout {
+                                    Ok(msg_logout) => {
+                                        // modify state variables.
+                                        response_msg.set(format!("{}", msg_logout));
+                                        *signed_in.write() = false;
 
-                                    user_login.set(String::new());
-                                    cleartext_pwd.set(String::new());
+                                        user_login.set(String::new());
+                                        cleartext_pwd.set(String::new());
 
-                                    *pagewize_conn_id.write() = 0;
-                                    *user_id.write() = 0;
+                                        *pagewize_conn_id.write() = 0;
+                                        *user_id.write() = 0;
 
-                                    *session_hash.write() = None;
+                                        *session_hash.write() = None;
 
-                                    *connection_info.write() = None;
-                                },
-                                Err(e) => {
-                                    response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
-                                }
-                            }  // end of 'match res_logout'
-                        } // end of "if *signed_in.read() == true"
+                                        *connection_info.write() = None;
+                                    },
+                                    Err(e) => {
+                                        response_msg.set(format!("Tried to logout from session {}. Error: {}", *pagewize_conn_id.read(), e));
+                                    }
+                                }  // end of 'match res_logout'
+                            } // end of "if *signed_in.read() == true" -> end of Some branch
+                        } // end of match
                     }, // end of 'onclick'
+
                     {button_text()}
                 } // end of 'button'
             } // end of div
