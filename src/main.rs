@@ -166,16 +166,9 @@ fn Signup() -> Element {
 /// Login / logout page, + signed-in game (TOADD)
 #[component]
 fn Login() -> Element {
-    // Signal variables (visible in the window)
-    // let mut signed_in = use_persistent("signed_in", || false);
+
 
     let mut user_login = use_persistent("user_login", || String::new());
-    // let mut pagewize_conn_id: Signal<i32> = use_persistent("connection_id", || 0);
-    // let mut user_id = use_persistent("user_id", || 0);
-    //  0 stands for no active connection.
-
-    // session_hash. Its initial value is None: Signal(Option<[u8; 32]>) ), standing for no active session.
-    // let mut session_hash: Signal<Option<[u8; 32]>> = use_persistent("session_hash", || None );
 
     // new in branch 'struct_connection_info'.
     let mut connection_info: Signal<Option<ConnectionInfo>> = use_persistent("connection_info", || None);
@@ -208,7 +201,7 @@ fn Login() -> Element {
     let correct_sol = use_signal(|| solution_lvl1());
 
     // initialization depending on whether the user is signed in
-    if  connection_info().is_some() { // connection_info().is_some() <- *signed_in.read()
+    if  connection_info().is_some() { // connection_info().is_some() <- connected
         button_text.set(String::from("Sign out"));
         response_msg.set(format!("You are signed in as: {}", *user_login.read()));
     } else { // This screen appears on the 1st load
@@ -250,7 +243,7 @@ fn Login() -> Element {
             }
 
             // Button "Sign in"/"Sign out" described by the variable 'button_text'.
-            // Calls the server fn.
+            // Calls the appropriate server fn.
             div {
                 button {
                     class : "btn-primary",
@@ -268,11 +261,8 @@ fn Login() -> Element {
 
                                 let response_text = match (response.1 > 0) {
                                     true => {// In case of success, update state variables:
-                                        // *pagewize_conn_id.write() = response.1;
-                                        // *signed_in.write() = true; // The button changes to "Sign out"
+
                                         *user_login.write() = candidate_user_login.read().clone();
-                                        // *user_id.write() = response.0;
-                                        // *session_hash.write() = response.2;
 
                                         // -> structure
                                         *connection_info.write() = Some(ConnectionInfo {
@@ -291,7 +281,7 @@ fn Login() -> Element {
 
                                 response_msg.set(response_text);
                             }, // end of None branch
-                            &mut Some(connection) => { // *signed_in.read() == true
+                            &mut Some(connection) => { // signed_in
                                 // Sign out user
                                 // Calls the server fn 'logout'.
 
@@ -305,15 +295,9 @@ fn Login() -> Element {
                                     Ok(msg_logout) => {
                                         // modify state variables.
                                         response_msg.set(format!("{}", msg_logout));
-                                        // *signed_in.write() = false;
 
                                         user_login.set(String::new());
                                         cleartext_pwd.set(String::new());
-
-                                        // *pagewize_conn_id.write() = 0;
-                                        // *user_id.write() = 0;
-
-                                        // *session_hash.write() = None;
 
                                         *connection_info.write() = None;
                                     },
@@ -321,7 +305,7 @@ fn Login() -> Element {
                                         response_msg.set(format!("Tried to logout from session {}. Error: {}", connection.connection_id, e));
                                     }
                                 }  // end of 'match res_logout'
-                            } // end of "if *signed_in.read() == true" -> end of Some branch
+                            } // end of Some branch
                         } // end of match
                     }, // end of 'onclick'
 
