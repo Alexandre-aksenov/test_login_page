@@ -298,10 +298,18 @@ fn Login() -> Element {
                             }; // RR warning: "Match can be replaced ...", but the most intuitive attempt (comment below) fails.
                             // let session_hash_arr = *session_hash.read().unwrap_or([0 as u8; 32]); // error: type [u8; 32] cannot be dereferenced
 
+
                             let res_logout = logout(*pagewize_conn_id.read(),
                                         *user_id.read(),
-                                        hex::encode(&session_hash_arr))
+                                        hex::encode(&session_hash_arr)) //-> connection.session_hash
                                     .await;
+
+                            /*
+                            let res_logout = logout(*pagewize_conn_id.read(),
+                                *user_id.read(),
+                                hex::encode(&((*connection_info.read()).session_hash))) //-> no field `session_hash` on type `std::option::Option<ConnectionInfo>`
+                            .await;
+                            */
 
                             match res_logout {
                                 Ok(msg_logout) => {
