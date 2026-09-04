@@ -355,8 +355,8 @@ fn Login() -> Element {
 
                         // query the list of levels for the user
                         user_list_levels.set(
-                            list_levels_uid(*pagewize_conn_id.read(), // -> connection, after copying the other features
-                                            *user_id.read(),
+                            list_levels_uid(connection.connection_id, // -> connection
+                                            connection.user_id,
                                             hex::encode(&connection.session_hash))
                             .await
                             .unwrap_or(Vec::new())
