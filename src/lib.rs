@@ -95,15 +95,7 @@ pub struct ConnectionInfo
     pub session_hash: [u8; 32],
 }
 
-impl ConnectionInfo {
-    
-    /// Copies the field session_hash from the ConnectionInfo struct
-    /// for passing the copy from frontend to middleware.
-    pub fn copy_session_hash(&self) -> [u8; 32] {
-        self.session_hash
-    }
-    
-}
+
 
 #[test]
 fn test_fullmove_to_json() {

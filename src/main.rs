@@ -201,7 +201,7 @@ fn Login() -> Element {
     let correct_sol = use_signal(|| solution_lvl1());
 
     // initialization depending on whether the user is signed in
-    if  connection_info().is_some() { // connection_info().is_some() <- connected
+    if  connection_info().is_some() { // connected
         button_text.set(String::from("Sign out"));
         response_msg.set(format!("You are signed in as: {}", *user_login.read()));
     } else { // This screen appears on the 1st load
