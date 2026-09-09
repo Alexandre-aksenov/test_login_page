@@ -367,7 +367,7 @@ fn Login() -> Element {
                         div {"The mini-game will appear here"}
                     }
                     else {
-                        div {"Started level {current_level.read().unwrap()}"}
+                        div {"Started level {current_level.read().unwrap()}"} // <- lvl_id
                         // TOADD the mini-game here
 
                         div { // input 1st player's move
@@ -414,7 +414,7 @@ fn Login() -> Element {
                                         connection.connection_id,
                                         connection.user_id,
                                         hex::encode(&connection.session_hash),
-                                        current_level.read().expect("level could not be read"),
+                                        current_level.read().expect("level could not be read"), // <- lvl_id
                                         to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
                                     .await;
 
