@@ -365,82 +365,82 @@ fn Login() -> Element {
                         // The mini-game itself
                         match *current_level.read() {
                             None => rsx! { div {"The mini-game will appear here"}
-                        },
-                        Some(lvl_id) => rsx! { // i16
-                            div {"Started level {lvl_id}"}
-                            // mini-game (really minimal, just 1 move for now)
+                            },
+                            Some(lvl_id) => rsx! { // i16
+                                div {"Started level {lvl_id}"}
+                                // mini-game (really minimal, just 1 move for now)
 
-                            div { // input 1st player's move
-                                input {
-                                    type : "text",
-                                    placeholder: "1st move",
-                                    oninput: move |event| {
-                                        player_move1.set(event.value());
-                                    },
+                                div { // input 1st player's move
+                                    input {
+                                        type : "text",
+                                        placeholder: "1st move",
+                                        oninput: move |event| {
+                                            player_move1.set(event.value());
+                                        },
+                                    }
+                                } // end of the div to input text field
+
+                                if *player_move1.read() ==
+                                    (correct_sol.read())[0].player.to_string() {
+
+                                    // Update num_correct_moves
+                                    button { // "Correct!"
+                                        class : "btn-primary",
+                                        onclick : move |_| async move {
+                                            *num_correct_moves.write() = 1;
+                                        }, // end of onclick action.
+                                        "Correct!"
+                                    } // end of button
                                 }
-                            } // end of the div to input text field
+                                else {
+                                    div {"Incorrect."}
+                                } // end of if/else block: reaction to user's 1st move
 
-                            if *player_move1.read() ==
-                                (correct_sol.read())[0].player.to_string() {
-                                // Update num_correct_moves
+                                // Show opponent's reply
+                                if *num_correct_moves.read() >= 1 {
+                                        div {"Opponent's reply: {(correct_sol.read())[0].opponent.to_string()}"}
+                                }
 
-                                button { // "Correct!"
-                                    class : "btn-primary",
-                                    onclick : move |_| async move {
-                                        *num_correct_moves.write() = 1;
-                                    }, // end of onclick action.
-                                    "Correct!"
-                                } // end of button
-                            }
-                            else {
-                                div {"Incorrect."}
-                            } // end of if/else block: reaction to user's 1st move
+                                // 2nd move will be shown after the first move is correct.
 
-                            // Show opponent's reply
-                            if *num_correct_moves.read() >= 1 {
-                                    div {"Opponent's reply: {(correct_sol.read())[0].opponent.to_string()}"}
-                            }
+                                // button save progress
+                                if *num_correct_moves.read() >= 1 {
+                                    button { // "Save"
+                                        class : "btn-primary",
+                                        // onclick
+                                        onclick : move |_| async move {
 
-                            // 2nd move will be shown after the first move is correct.
+                                            let res_last_saveid = save_game_uid(
+                                                connection.connection_id,
+                                                connection.user_id,
+                                                hex::encode(&connection.session_hash),
+                                                lvl_id,
+                                                to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
+                                            .await;
 
-                            // button save progress
-                            if *num_correct_moves.read() >= 1 {
-                                button { // "Save"
-                                    class : "btn-primary",
-                                    // onclick
-                                    onclick : move |_| async move {
-
-                                        let res_last_saveid = save_game_uid(
-                                            connection.connection_id,
-                                            connection.user_id,
-                                            hex::encode(&connection.session_hash),
-                                            lvl_id,
-                                            to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
-                                        .await;
-
-                                        // save_id for printing below
-                                        match res_last_saveid {
-                                            Ok(saveid) => {
-                                                *last_saveid.write() = saveid;
-                                            },
-                                            Err(_) => {
-                                                *last_saveid.write() = -1;
+                                            // save_id for printing below
+                                            match res_last_saveid {
+                                                Ok(saveid) => {
+                                                    *last_saveid.write() = saveid;
+                                                },
+                                                Err(_) => {
+                                                    *last_saveid.write() = -1;
+                                                }
                                             }
-                                        }
-                                    }, // end of onclick action.
-                                    "Save progress"
-                                } // end of button to save progress
+                                        }, // end of onclick action.
+                                        "Save progress"
+                                    } // end of button to save progress
 
-                            } // end of: if num_correct_moves.read() >= 1
+                                } // end of: if num_correct_moves.read() >= 1
 
-                        } // end of: if current_level is not none
-                            }
+                            } // end of hand: current_level is Some
+                        } // end of match: current_level -> Nome/Some
 
                     } // end of the hand: if next_level Some
-                } // end of match next_level -> Nome/Some
+                } // end of match: next_level -> Nome/Some
 
             } // end of hand connection_info => Some(connection:ConnectionInfo)
-        } // end of match *connection_info.read()
+        } // end of match: connection_info.read -> Some(a user is connected) / None(no one is connected)
 
     } // end of rsx!
 } // end of component
