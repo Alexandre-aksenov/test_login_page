@@ -363,12 +363,12 @@ fn Login() -> Element {
                         } // end of button
 
                         // The mini-game itself
-                        if (current_level.read().is_none()) { // -> 3rd pattern-matching ()
-                            div {"The mini-game will appear here"}
-                        }
-                        else {
-                            div {"Started level {current_level.read().unwrap()}"} // <- lvl_id
-                            // TOADD the mini-game here
+                        match *current_level.read() {
+                            None => rsx! { div {"The mini-game will appear here"}
+                        },
+                        Some(lvl_id) => rsx! { // i16
+                            div {"Started level {lvl_id}"}
+                            // mini-game (really minimal, just 1 move for now)
 
                             div { // input 1st player's move
                                 input {
@@ -414,7 +414,7 @@ fn Login() -> Element {
                                             connection.connection_id,
                                             connection.user_id,
                                             hex::encode(&connection.session_hash),
-                                            current_level.read().expect("level could not be read"), // <- lvl_id
+                                            lvl_id,
                                             to_json(&(correct_sol.read())[..(*num_correct_moves.read() as usize)]))
                                         .await;
 
@@ -434,6 +434,7 @@ fn Login() -> Element {
                             } // end of: if num_correct_moves.read() >= 1
 
                         } // end of: if current_level is not none
+                            }
 
                     } // end of the hand: if next_level Some
                 } // end of match next_level -> Nome/Some
